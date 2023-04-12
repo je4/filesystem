@@ -1,13 +1,14 @@
 package osfsrw
 
 import (
-	"github.com/je4/filesystem/v2/pkg/fsrw"
+	"github.com/je4/filesystem/v2/pkg/readwritefs"
+	"github.com/je4/filesystem/v2/pkg/writefs"
 	"io/fs"
 	"os"
 	"path/filepath"
 )
 
-func NewOSFSRW(dir string) fsrw.FSRW {
+func NewOSFSRW(dir string) readwritefs.ReadWriteFS {
 	return &osFSRW{
 		dir: dir,
 	}
@@ -25,7 +26,7 @@ func (d *osFSRW) Stat(name string) (fs.FileInfo, error) {
 	return os.Stat(filepath.Join(d.dir, name))
 }
 
-func (d *osFSRW) Create(path string) (fsrw.FileW, error) {
+func (d *osFSRW) Create(path string) (writefs.FileWrite, error) {
 	return os.Create(filepath.Join(d.dir, path))
 }
 
@@ -42,8 +43,9 @@ func (d *osFSRW) ReadFile(name string) ([]byte, error) {
 }
 
 var (
-	_ fsrw.FSRW     = &osFSRW{}
-	_ fs.ReadDirFS  = &osFSRW{}
-	_ fs.ReadFileFS = &osFSRW{}
-	_ fs.StatFS     = &osFSRW{}
+	_ readwritefs.ReadWriteFS = &osFSRW{}
+	_ writefs.MkDirFS         = &osFSRW{}
+	_ fs.ReadDirFS            = &osFSRW{}
+	_ fs.ReadFileFS           = &osFSRW{}
+	_ fs.StatFS               = &osFSRW{}
 )

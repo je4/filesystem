@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/fsrw"
+	"github.com/je4/filesystem/v2/pkg/basefs"
 	"github.com/je4/filesystem/v2/pkg/osfsrw"
 	"github.com/je4/filesystem/v2/pkg/zipasfolder"
 	"io/fs"
@@ -36,8 +36,11 @@ func main() {
 	flag.Parse()
 
 	dirFS := osfsrw.NewOSFSRW(*basedir)
-	newFS := zipasfolder.NewFS(dirFS, 20)
-	closeFS, ok := newFS.(fsrw.CloseFSRW)
+	newFS, err := zipasfolder.NewFS(dirFS, 20)
+	if err != nil {
+		panic(err)
+	}
+	closeFS, ok := newFS.(basefs.CloserFS)
 	if ok {
 		defer closeFS.Close()
 	}

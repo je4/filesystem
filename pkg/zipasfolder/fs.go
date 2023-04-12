@@ -1,9 +1,10 @@
 package zipasfolder
 
 import (
-	"archive/zip"
 	"github.com/bluele/gcache"
-	"github.com/je4/filesystem/v2/pkg/fsrw"
+	"github.com/je4/filesystem/v2/pkg/basefs"
+	"github.com/je4/filesystem/v2/pkg/readwritefs"
+	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/pkg/errors"
 	"io"
 	"io/fs"
@@ -13,7 +14,9 @@ import (
 	"time"
 )
 
-func NewFS(baseFS fsrw.FSRW, cacheSize int) fsrw.FSRW {
+// NewFS creates a new FS which handles zipfiles like folders which are read-only
+// it implements readwritefs.ReadWriteFS, fs.ReadDirFS, fs.ReadFileFS, basefs.CloserFS
+func NewFS(baseFS readwritefs.ReadWriteFS, cacheSize int) (fs.FS, error) {
 	f := &FS{
 		baseFS: baseFS,
 		zipCache: gcache.New(cacheSize).
@@ -27,33 +30,18 @@ func NewFS(baseFS fsrw.FSRW, cacheSize int) fsrw.FSRW {
 				if err != nil {
 					return nil, errors.Wrapf(err, "cannot open zip file '%s'", zipFilename)
 				}
-				stat, err := zipFile.Stat()
-				if err != nil {
-					return nil, errors.Wrapf(err, "cannot stat zip file '%s'", zipFilename)
-				}
-				filesize := stat.Size()
-				readerAt, ok := zipFile.(io.ReaderAt)
-				if !ok {
-					zipFile.Close()
-					return nil, errors.Errorf("cannot cast file '%s' to io.ReaderAt", zipFilename)
-				}
-				zipReader, err := zip.NewReader(readerAt, filesize)
-				if err != nil {
-					zipFile.Close()
-					return nil, errors.Wrapf(err, "cannot create zip reader for '%s'", zipFilename)
-				}
-				zipFS := NewZIPFS(zipReader, zipFile)
+				zipFS, err := NewZipFSCloser(zipFile)
 				return zipFS, nil
 			}).
 			EvictedFunc(func(key, value any) {
-				zipFS, ok := value.(*ZIPFS)
+				zipFS, ok := value.(basefs.CloserFS)
 				if !ok {
 					return
 				}
 				zipFS.Close()
 			}).
 			PurgeVisitorFunc(func(key, value any) {
-				zipFS, ok := value.(*ZIPFS)
+				zipFS, ok := value.(basefs.CloserFS)
 				if !ok {
 					return
 				}
@@ -74,26 +62,32 @@ func NewFS(baseFS fsrw.FSRW, cacheSize int) fsrw.FSRW {
 			}
 		}
 	}()
-	return f
+	return f, nil
 }
 
 type FS struct {
-	baseFS   fsrw.FSRW
+	baseFS   fs.FS
 	zipCache gcache.Cache
 	lock     sync.RWMutex
 	end      chan bool
 }
 
-func (fsys *FS) Create(path string) (fsrw.FileW, error) {
-	return fsys.baseFS.Create(path)
+func (fsys *FS) Create(path string) (writefs.FileWrite, error) {
+	path = clearPath(path)
+	zipFile, _, isZIP := expandZipFile(path)
+	if isZIP {
+		return nil, errors.Errorf("cannot create file '%s' in zip file '%s'", path, zipFile)
+	}
+	return writefs.Create(fsys.baseFS, path)
 }
 
 func (fsys *FS) MkDir(path string) error {
-	mkdirFS, ok := fsys.baseFS.(fsrw.MkDirFSRW)
-	if !ok {
-		return errors.New("MkDir not supported")
+	path = clearPath(path)
+	zipFile, _, isZIP := expandZipFile(path)
+	if isZIP {
+		return errors.Errorf("cannot create folder '%s' in zip file '%s'", path, zipFile)
 	}
-	return mkdirFS.MkDir(path)
+	return writefs.MkDir(fsys.baseFS, path)
 }
 
 func (fsys *FS) Stat(name string) (fs.FileInfo, error) {
@@ -101,13 +95,9 @@ func (fsys *FS) Stat(name string) (fs.FileInfo, error) {
 	name = strings.Trim(name, "/")
 	zipFile, zipPath, isZIP := expandZipFile(name)
 	if !isZIP {
-		statFS, ok := fsys.baseFS.(fs.StatFS)
-		if !ok {
-			return nil, errors.New("Stat not supported")
-		}
-		info, err := statFS.Stat(name)
+		info, err := fs.Stat(fsys.baseFS, name)
 		if err != nil {
-			return info, errors.Wrapf(err, "cannot open file '%s'", name)
+			return info, errors.Wrapf(err, "cannot stat file '%s'", name)
 		}
 		return info, nil
 	}
@@ -117,14 +107,15 @@ func (fsys *FS) Stat(name string) (fs.FileInfo, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get zip file '%s'", zipFile)
 	}
-	zipFS, ok := zipFSCache.(*ZIPFS)
+
+	zipFS, ok := zipFSCache.(fs.FS)
 	if !ok {
-		return nil, errors.Errorf("cannot cast zip file '%s' to *ZIPFS", zipFile)
+		return nil, errors.Errorf("cannot cast zip file '%s' to fs.FS", zipFile)
 	}
-	return zipFS.Stat(zipPath)
+	return fs.Stat(zipFS, zipPath)
 }
 
-func (fsys *FS) Sub(dir string) (fsrw.FSRW, error) {
+func (fsys *FS) Sub(dir string) (readwritefs.ReadWriteFS, error) {
 	return NewSubFS(fsys, dir), nil
 }
 
@@ -157,9 +148,9 @@ func (fsys *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 				return nil, errors.Wrapf(err, "cannot get info for file '%s'", entry.Name())
 			}
 			if fi.IsDir() || isZipFile(entry.Name()) {
-				result = append(result, NewZIPFSDirEntry(NewZIPFSFileInfoDir(entry.Name())))
+				result = append(result, basefs.NewDirEntry(basefs.NewFileInfoDir(entry.Name())))
 			} else {
-				result = append(result, NewZIPFSDirEntry(fi))
+				result = append(result, basefs.NewDirEntry(fi))
 			}
 		}
 		return result, nil
@@ -170,11 +161,11 @@ func (fsys *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get zip file '%s'", zipFile)
 	}
-	zipFS, ok := zipFSCache.(*ZIPFS)
+	zipFS, ok := zipFSCache.(fs.FS)
 	if !ok {
 		return nil, errors.Errorf("cannot cast zip file '%s' to *ZIPFS", zipFile)
 	}
-	return zipFS.ReadDir(zipPath)
+	return fs.ReadDir(zipFS, zipPath)
 }
 
 func (fsys *FS) Open(name string) (fs.File, error) {
@@ -195,7 +186,7 @@ func (fsys *FS) Open(name string) (fs.File, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot get zip file '%s'", zipFile)
 	}
-	zipFS, ok := zipFSCache.(*ZIPFS)
+	zipFS, ok := zipFSCache.(fs.FS)
 	if !ok {
 		return nil, errors.Errorf("cannot cast zip file '%s' to *ZIPFS", zipFile)
 	}
@@ -217,13 +208,13 @@ func (fsys *FS) Close() error {
 func (fsys *FS) ClearUnlocked() error {
 	fsys.lock.Lock()
 	defer fsys.lock.Unlock()
-	fss := fsys.zipCache.GetALL(false)
-	for key, fs := range fss {
-		fs, ok := fs.(*ZIPFS)
+	fsMap := fsys.zipCache.GetALL(false)
+	for key, mFS := range fsMap {
+		isLockedFS, ok := mFS.(basefs.IsLockedFS)
 		if !ok {
 			continue
 		}
-		if !fs.IsLocked() {
+		if !isLockedFS.IsLocked() {
 			fsys.zipCache.Remove(key)
 		}
 	}
@@ -248,7 +239,8 @@ func expandZipFile(name string) (zipFile string, zipPath string, isZip bool) {
 }
 
 var (
-	_ fsrw.FSRW     = &FS{}
-	_ fs.ReadDirFS  = &FS{}
-	_ fs.ReadFileFS = &FS{}
+	_ readwritefs.ReadWriteFS = (*FS)(nil)
+	_ fs.ReadDirFS            = (*FS)(nil)
+	_ fs.ReadFileFS           = (*FS)(nil)
+	_ basefs.CloserFS         = (*FS)(nil)
 )
