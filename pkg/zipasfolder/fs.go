@@ -3,7 +3,6 @@ package zipasfolder
 import (
 	"github.com/bluele/gcache"
 	"github.com/je4/filesystem/v2/pkg/basefs"
-	"github.com/je4/filesystem/v2/pkg/readwritefs"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/pkg/errors"
 	"io"
@@ -16,7 +15,7 @@ import (
 
 // NewFS creates a new FS which handles zipfiles like folders which are read-only
 // it implements readwritefs.ReadWriteFS, fs.ReadDirFS, fs.ReadFileFS, basefs.CloserFS
-func NewFS(baseFS readwritefs.ReadWriteFS, cacheSize int) (fs.FS, error) {
+func NewFS(baseFS writefs.ReadWriteFS, cacheSize int) (fs.FS, error) {
 	f := &FS{
 		baseFS: baseFS,
 		zipCache: gcache.New(cacheSize).
@@ -72,6 +71,7 @@ type FS struct {
 	end      chan bool
 }
 
+// CReate creates a new file
 func (fsys *FS) Create(path string) (writefs.FileWrite, error) {
 	path = clearPath(path)
 	zipFile, _, isZIP := expandZipFile(path)
@@ -81,6 +81,7 @@ func (fsys *FS) Create(path string) (writefs.FileWrite, error) {
 	return writefs.Create(fsys.baseFS, path)
 }
 
+// MkDir creates a new folder
 func (fsys *FS) MkDir(path string) error {
 	path = clearPath(path)
 	zipFile, _, isZIP := expandZipFile(path)
@@ -90,6 +91,7 @@ func (fsys *FS) MkDir(path string) error {
 	return writefs.MkDir(fsys.baseFS, path)
 }
 
+// Stat returns the file info for a given path
 func (fsys *FS) Stat(name string) (fs.FileInfo, error) {
 	name = strings.TrimPrefix(name, "./")
 	name = strings.Trim(name, "/")
@@ -115,10 +117,12 @@ func (fsys *FS) Stat(name string) (fs.FileInfo, error) {
 	return fs.Stat(zipFS, zipPath)
 }
 
-func (fsys *FS) Sub(dir string) (readwritefs.ReadWriteFS, error) {
+// Sub returns a new FS which is a subfolder of the current FS
+func (fsys *FS) Sub(dir string) (writefs.ReadWriteFS, error) {
 	return NewSubFS(fsys, dir), nil
 }
 
+// ReadFile reads a file from the filesystem
 func (fsys *FS) ReadFile(name string) ([]byte, error) {
 	fp, err := fsys.Open(name)
 	if err != nil {
@@ -128,6 +132,7 @@ func (fsys *FS) ReadFile(name string) ([]byte, error) {
 	return io.ReadAll(fp)
 }
 
+// ReadDir reads a directory from the filesystem
 func (fsys *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	name = strings.TrimPrefix(name, "./")
 	name = strings.Trim(name, "/")
@@ -168,6 +173,7 @@ func (fsys *FS) ReadDir(name string) ([]fs.DirEntry, error) {
 	return fs.ReadDir(zipFS, zipPath)
 }
 
+// Open opens a file from the filesystem
 func (fsys *FS) Open(name string) (fs.File, error) {
 	name = strings.TrimPrefix(name, "./")
 	name = strings.Trim(name, "/")
@@ -197,6 +203,7 @@ func (fsys *FS) Open(name string) (fs.File, error) {
 	return rc, nil
 }
 
+// Close closes the filesystem
 func (fsys *FS) Close() error {
 	fsys.lock.Lock()
 	defer fsys.lock.Unlock()
@@ -239,8 +246,9 @@ func expandZipFile(name string) (zipFile string, zipPath string, isZip bool) {
 }
 
 var (
-	_ readwritefs.ReadWriteFS = (*FS)(nil)
-	_ fs.ReadDirFS            = (*FS)(nil)
-	_ fs.ReadFileFS           = (*FS)(nil)
-	_ basefs.CloserFS         = (*FS)(nil)
+	_ writefs.ReadWriteFS = (*FS)(nil)
+	_ writefs.MkDirFS     = (*FS)(nil)
+	_ fs.ReadDirFS        = (*FS)(nil)
+	_ fs.ReadFileFS       = (*FS)(nil)
+	_ basefs.CloserFS     = (*FS)(nil)
 )

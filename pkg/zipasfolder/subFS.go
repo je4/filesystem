@@ -2,18 +2,17 @@ package zipasfolder
 
 import (
 	"errors"
-	"github.com/je4/filesystem/v2/pkg/readwritefs"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"io/fs"
 	"path/filepath"
 )
 
 type subFS struct {
-	fsys readwritefs.ReadWriteFS
+	fsys writefs.ReadWriteFS
 	dir  string
 }
 
-func NewSubFS(fsys readwritefs.ReadWriteFS, dir string) *subFS {
+func NewSubFS(fsys writefs.ReadWriteFS, dir string) *subFS {
 	return &subFS{
 		fsys: fsys,
 		dir:  dir,
@@ -36,7 +35,7 @@ func (sfs *subFS) Stat(name string) (fs.FileInfo, error) {
 	return fs.Stat(sfs.fsys, filepath.ToSlash(filepath.Join(sfs.dir, name)))
 }
 
-func (sfs *subFS) Sub(dir string) (readwritefs.ReadWriteFS, error) {
+func (sfs *subFS) Sub(dir string) (writefs.ReadWriteFS, error) {
 	return NewSubFS(sfs.fsys, filepath.ToSlash(filepath.Join(sfs.dir, dir))), nil
 }
 

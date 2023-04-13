@@ -13,6 +13,7 @@ import (
 type OpenRawZipFS interface {
 	fs.FS
 	OpenRaw(name string) (fs.File, error)
+	GetZipReader() *zip.Reader
 }
 
 // NewFS creates a new fs.FS from a readerAt and size
@@ -31,6 +32,10 @@ func NewFS(r io.ReaderAt, size int64) (fs fs.FS, err error) {
 type zipFS struct {
 	*zip.Reader
 	mutex *basefs.Mutex
+}
+
+func (zfs *zipFS) GetZipReader() *zip.Reader {
+	return zfs.Reader
 }
 
 func (zfs *zipFS) Sub(dir string) (fs.FS, error) {

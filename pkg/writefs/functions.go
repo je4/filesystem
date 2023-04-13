@@ -20,15 +20,15 @@ func Rename(fsys fs.FS, oldPath, newPath string) error {
 }
 
 func Create(fsys fs.FS, path string) (FileWrite, error) {
-	if _fsys, ok := fsys.(WriteFS); ok {
+	if _fsys, ok := fsys.(CreateFS); ok {
 		return _fsys.Create(path)
 	}
 	return nil, errors.Wrapf(fs.ErrInvalid, "fs does not support Create")
 }
 
-func Delete(fsys fs.FS, path string) error {
-	if _fsys, ok := fsys.(DeleteFS); ok {
-		return _fsys.Delete(path)
+func Remove(fsys fs.FS, path string) error {
+	if _fsys, ok := fsys.(RemoveFS); ok {
+		return _fsys.Remove(path)
 	}
 	return errors.Wrapf(fs.ErrInvalid, "fs does not support Delete")
 }
