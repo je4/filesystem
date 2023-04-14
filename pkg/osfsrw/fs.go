@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-func NewOSFSRW(dir string) writefs.ReadWriteFS {
+func NewFS(dir string) fs.FS {
 	return &osFSRW{
 		dir: dir,
 	}
@@ -19,7 +19,7 @@ type osFSRW struct {
 }
 
 func (d *osFSRW) Sub(dir string) (fs.FS, error) {
-	return NewOSFSRW(filepath.Join(d.dir, dir)), nil
+	return NewFS(filepath.Join(d.dir, dir)), nil
 }
 
 func (d *osFSRW) Remove(path string) error {

@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/basefs"
 	"github.com/je4/filesystem/v2/pkg/osfsrw"
+	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/je4/filesystem/v2/pkg/zipasfolder"
 	"io/fs"
 	"path/filepath"
@@ -35,15 +35,13 @@ func recurseDir(fsys fs.FS, name string) {
 func main() {
 	flag.Parse()
 
-	dirFS := osfsrw.NewOSFSRW(*basedir)
+	dirFS := osfsrw.NewFS(*basedir)
 	newFS, err := zipasfolder.NewFS(dirFS, 20)
 	if err != nil {
 		panic(err)
 	}
-	closeFS, ok := newFS.(basefs.CloserFS)
-	if ok {
-		defer closeFS.Close()
-	}
+	defer writefs.Close(newFS)
+	fs.ReadDir(newFS, "")
 
 	recurseDir(newFS, "")
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/osfsrw"
 	"github.com/je4/filesystem/v2/pkg/writefs"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,11 +20,11 @@ func tempFileName(prefix, suffix string) string {
 	return prefix + hex.EncodeToString(randBytes) + suffix
 }
 
-var baseFS writefs.ReadWriteFS // base file system
-var zipFileName string         // name of the zip file
+var baseFS fs.FS       // base file system
+var zipFileName string // name of the zip file
 
 func TestMain(m *testing.M) {
-	baseFS = osfsrw.NewOSFSRW(os.TempDir())
+	baseFS = osfsrw.NewFS(os.TempDir())
 	zipFileName = tempFileName("zipfsrwtest_", ".zip")
 	os.Exit(m.Run())
 }

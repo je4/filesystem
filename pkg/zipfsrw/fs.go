@@ -17,7 +17,7 @@ import (
 // If the file does not exist, it will be created on the first write operation.
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
-func NewZipFSRW(baseFS writefs.ReadWriteFS, path string) (writefs.ReadWriteFS, error) {
+func NewZipFSRW(baseFS fs.FS, path string) (writefs.ReadWriteFS, error) {
 	var fpat io.ReaderAt
 	var size int64
 	var fp fs.File
@@ -38,7 +38,7 @@ func NewZipFSRW(baseFS writefs.ReadWriteFS, path string) (writefs.ReadWriteFS, e
 		newpath = newpath + ".tmp"
 	}
 	// create new file
-	newfp, err := baseFS.Create(newpath)
+	newfp, err := writefs.Create(baseFS, newpath)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zip file '%s'", newpath)
 	}
@@ -63,7 +63,7 @@ func NewZipFSRW(baseFS writefs.ReadWriteFS, path string) (writefs.ReadWriteFS, e
 
 type zipFSRW struct {
 	*zipFSRWBase
-	baseFS      writefs.ReadWriteFS
+	baseFS      fs.FS
 	fp          fs.File
 	zipFP       writefs.FileWrite
 	zipFPBuffer *bufio.Writer
@@ -194,5 +194,5 @@ func (zfsrw *zipFSRWBase) Create(path string) (writefs.FileWrite, error) {
 
 var (
 	_ writefs.ReadWriteFS = &zipFSRW{}
-	_ basefs.CloserFS     = &zipFSRW{}
+	_ writefs.CloseFS     = &zipFSRW{}
 )
