@@ -29,14 +29,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestZipFSRW(t *testing.T) {
+	t.Cleanup(func() {
+		if err := writefs.Remove(baseFS, zipFileName); err != nil {
+			t.Fatal(err)
+		}
+	})
+
 	t.Run("create", testZipFSRW_Create)
 	t.Run("read", testZipFSRW_Read)
 	t.Run("update", testZipFSRW_Update)
 	t.Run("readUpdated", testZipFSRW_ReadUpdate)
-
-	if err := writefs.Remove(baseFS, zipFileName); err != nil {
-		t.Fatal(err)
-	}
 }
 
 func testZipFSRW_Create(t *testing.T) {
