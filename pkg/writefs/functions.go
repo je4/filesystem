@@ -32,3 +32,10 @@ func Remove(fsys fs.FS, path string) error {
 	}
 	return errors.Wrapf(fs.ErrInvalid, "fs does not support Delete")
 }
+
+func Close(fsys fs.FS) error {
+	if _fsys, ok := fsys.(CloseFS); ok {
+		return _fsys.Close()
+	}
+	return nil
+}

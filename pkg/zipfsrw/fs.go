@@ -17,7 +17,7 @@ import (
 // If the file does not exist, it will be created on the first write operation.
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
-func NewZipFSRW(baseFS writefs.ReadWriteFS, path string) (*zipFSRW, error) {
+func NewZipFSRW(baseFS writefs.ReadWriteFS, path string) (writefs.ReadWriteFS, error) {
 	var fpat io.ReaderAt
 	var size int64
 	var fp fs.File

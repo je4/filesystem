@@ -15,3 +15,7 @@ type RenameFS interface {
 type RemoveFS interface {
 	Remove(path string) error
 }
+
+type CloseFS interface {
+	Close() error
+}
