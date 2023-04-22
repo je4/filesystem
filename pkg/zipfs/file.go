@@ -1,12 +1,12 @@
 package zipfs
 
 import (
-	"github.com/je4/filesystem/v2/pkg/basefs"
+	"github.com/je4/filesystem/v2/pkg/writefs"
 	"io"
 	"io/fs"
 )
 
-func NewFile(info fs.FileInfo, rc io.ReadCloser, mutex *basefs.Mutex) fs.File {
+func NewFile(info fs.FileInfo, rc io.ReadCloser, mutex *writefs.Mutex) fs.File {
 	return &file{
 		ReadCloser: rc,
 		fi:         info,
@@ -17,7 +17,7 @@ func NewFile(info fs.FileInfo, rc io.ReadCloser, mutex *basefs.Mutex) fs.File {
 type file struct {
 	io.ReadCloser
 	fi    fs.FileInfo
-	mutex *basefs.Mutex
+	mutex *writefs.Mutex
 }
 
 func (f *file) Stat() (fs.FileInfo, error) {

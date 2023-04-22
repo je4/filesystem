@@ -1,4 +1,4 @@
-package basefs
+package writefs
 
 import (
 	"io/fs"

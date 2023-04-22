@@ -2,7 +2,6 @@ package zipasfolder
 
 import (
 	"github.com/bluele/gcache"
-	"github.com/je4/filesystem/v2/pkg/basefs"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/pkg/errors"
 	"io"
@@ -153,9 +152,9 @@ func (fsys *zipAsfolderFS) ReadDir(name string) ([]fs.DirEntry, error) {
 				return nil, errors.Wrapf(err, "cannot get info for file '%s'", entry.Name())
 			}
 			if fi.IsDir() || isZipFile(entry.Name()) {
-				result = append(result, basefs.NewDirEntry(basefs.NewFileInfoDir(entry.Name())))
+				result = append(result, writefs.NewDirEntry(writefs.NewFileInfoDir(entry.Name())))
 			} else {
-				result = append(result, basefs.NewDirEntry(fi))
+				result = append(result, writefs.NewDirEntry(fi))
 			}
 		}
 		return result, nil
@@ -217,7 +216,7 @@ func (fsys *zipAsfolderFS) ClearUnlocked() error {
 	defer fsys.lock.Unlock()
 	fsMap := fsys.zipCache.GetALL(false)
 	for key, mFS := range fsMap {
-		isLockedFS, ok := mFS.(basefs.IsLockedFS)
+		isLockedFS, ok := mFS.(writefs.IsLockedFS)
 		if !ok {
 			continue
 		}

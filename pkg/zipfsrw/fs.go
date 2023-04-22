@@ -5,7 +5,6 @@ import (
 	"archive/zip"
 	"bufio"
 	"emperror.dev/errors"
-	"github.com/je4/filesystem/v2/pkg/basefs"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/je4/filesystem/v2/pkg/zipfs"
 	"golang.org/x/exp/slices"
@@ -189,7 +188,7 @@ func (zfsrw *zipFSRWBase) Create(path string) (writefs.FileWrite, error) {
 		return nil, errors.Wrapf(err, "cannot create file '%s'", path)
 	}
 	zfsrw.newFiles = append(zfsrw.newFiles, path)
-	return basefs.NewNopWriteCloser(fp), nil
+	return writefs.NewNopWriteCloser(fp), nil
 }
 
 var (

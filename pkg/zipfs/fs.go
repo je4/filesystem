@@ -3,7 +3,7 @@ package zipfs
 import (
 	"archive/zip"
 	"emperror.dev/errors"
-	"github.com/je4/filesystem/v2/pkg/basefs"
+	"github.com/je4/filesystem/v2/pkg/writefs"
 	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
@@ -25,13 +25,13 @@ func NewFS(r io.ReaderAt, size int64) (fs fs.FS, err error) {
 	}
 	return &zipFS{
 		Reader: zipReader,
-		mutex:  basefs.NewMutex(),
+		mutex:  writefs.NewMutex(),
 	}, nil
 }
 
 type zipFS struct {
 	*zip.Reader
-	mutex *basefs.Mutex
+	mutex *writefs.Mutex
 }
 
 func (zfs *zipFS) GetZipReader() *zip.Reader {
@@ -74,10 +74,10 @@ func (zfs *zipFS) ReadDir(name string) ([]fs.DirEntry, error) {
 		if strings.HasPrefix(f.Name, name) {
 			parts := strings.Split(strings.Trim(f.Name[len(name):], "/"), "/")
 			if len(parts) == 1 {
-				result = append(result, basefs.NewDirEntry(f.FileInfo()))
+				result = append(result, writefs.NewDirEntry(f.FileInfo()))
 				continue
 			}
-			result = append(result, basefs.NewDirEntry(basefs.NewFileInfoDir(parts[0])))
+			result = append(result, writefs.NewDirEntry(writefs.NewFileInfoDir(parts[0])))
 		}
 	}
 	slices.SortFunc(result, func(i, j fs.DirEntry) bool {
@@ -111,7 +111,7 @@ func (zfs *zipFS) OpenRaw(name string) (fs.File, error) {
 				return nil, errors.Wrapf(err, "failed to open file '%s'", name)
 			}
 			zfs.mutex.Lock()
-			return NewFile(f.FileInfo(), basefs.NewNopReadCloser(w), zfs.mutex), nil
+			return NewFile(f.FileInfo(), writefs.NewNopReadCloser(w), zfs.mutex), nil
 		}
 	}
 	return nil, fs.ErrNotExist
@@ -122,11 +122,11 @@ func (zfs *zipFS) IsLocked() bool {
 }
 
 var (
-	_ fs.FS             = (*zipFS)(nil)
-	_ fs.ReadDirFS      = (*zipFS)(nil)
-	_ fs.ReadFileFS     = (*zipFS)(nil)
-	_ fs.StatFS         = (*zipFS)(nil)
-	_ fs.SubFS          = (*zipFS)(nil)
-	_ basefs.IsLockedFS = (*zipFS)(nil)
-	_ OpenRawZipFS      = (*zipFS)(nil)
+	_ fs.FS              = (*zipFS)(nil)
+	_ fs.ReadDirFS       = (*zipFS)(nil)
+	_ fs.ReadFileFS      = (*zipFS)(nil)
+	_ fs.StatFS          = (*zipFS)(nil)
+	_ fs.SubFS           = (*zipFS)(nil)
+	_ writefs.IsLockedFS = (*zipFS)(nil)
+	_ OpenRawZipFS       = (*zipFS)(nil)
 )

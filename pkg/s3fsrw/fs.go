@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"emperror.dev/errors"
-	"github.com/je4/filesystem/v2/pkg/basefs"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -115,7 +114,7 @@ func (s3FS *s3FSRW) ReadDir(path string) ([]fs.DirEntry, error) {
 		}
 		result := []fs.DirEntry{}
 		for _, bi := range bucketInfo {
-			result = append(result, basefs.NewDirEntry(basefs.NewFileInfoDir(bi.Name)))
+			result = append(result, writefs.NewDirEntry(writefs.NewFileInfoDir(bi.Name)))
 		}
 		return result, nil
 	}
@@ -127,7 +126,7 @@ func (s3FS *s3FSRW) ReadDir(path string) ([]fs.DirEntry, error) {
 			return nil, errors.Wrapf(objectInfo.Err, "cannot read '%s'", path)
 		}
 		oiHelper := objectInfo
-		result = append(result, basefs.NewDirEntry(NewFileInfo(&oiHelper)))
+		result = append(result, writefs.NewDirEntry(NewFileInfo(&oiHelper)))
 	}
 	return result, nil
 }
@@ -230,7 +229,7 @@ func (s3FS *s3FSRW) WalkDir(path string, fn fs.WalkDirFunc) error {
 			return errors.Wrapf(err, "cannot list buckets")
 		}
 	} else {
-		bucketEntries = []fs.DirEntry{basefs.NewDirEntry(basefs.NewFileInfoDir(bucket))}
+		bucketEntries = []fs.DirEntry{writefs.NewDirEntry(writefs.NewFileInfoDir(bucket))}
 	}
 	for _, bucketEntry := range bucketEntries {
 		ctx := context.Background()
@@ -238,7 +237,7 @@ func (s3FS *s3FSRW) WalkDir(path string, fn fs.WalkDirFunc) error {
 			Prefix:    bucketPath,
 			Recursive: true,
 		}) {
-			if err := fn(objectInfo.Key, basefs.NewDirEntry(NewFileInfo(&objectInfo)), nil); err != nil {
+			if err := fn(objectInfo.Key, writefs.NewDirEntry(NewFileInfo(&objectInfo)), nil); err != nil {
 				return errors.Wrapf(err, "error in '%s'", objectInfo.Key)
 			}
 		}
@@ -250,14 +249,14 @@ func (s3FS *s3FSRW) WalkDir(path string, fn fs.WalkDirFunc) error {
 func (s3FS *s3FSRW) Stat(path string) (fs.FileInfo, error) {
 	bucket, bucketPath := extractBucket(path)
 	if bucket == "" {
-		return basefs.NewFileInfoDir(path), nil
+		return writefs.NewFileInfoDir(path), nil
 	}
 	ctx := context.Background()
 	objectInfo, err := s3FS.client.StatObject(ctx, bucket, bucketPath, minio.StatObjectOptions{})
 	if err != nil {
 		if s3FS.IsNotExist(err) {
 			if s3FS.hasContent(path) {
-				return basefs.NewFileInfoDir(path), nil
+				return writefs.NewFileInfoDir(path), nil
 			}
 		}
 		return nil, errors.Wrapf(err, "cannot stat '%s'", path)
