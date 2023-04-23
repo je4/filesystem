@@ -3,6 +3,7 @@ package zipfs
 import (
 	"archive/zip"
 	"emperror.dev/errors"
+	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"golang.org/x/exp/slices"
 	"io"
@@ -32,6 +33,10 @@ func NewFS(r io.ReaderAt, size int64) (fs fs.FS, err error) {
 type zipFS struct {
 	*zip.Reader
 	mutex *writefs.Mutex
+}
+
+func (zfs *zipFS) String() string {
+	return fmt.Sprintf("zipFS(%d files)", len(zfs.File))
 }
 
 func (zfs *zipFS) GetZipReader() *zip.Reader {
@@ -129,4 +134,5 @@ var (
 	_ fs.SubFS           = (*zipFS)(nil)
 	_ writefs.IsLockedFS = (*zipFS)(nil)
 	_ OpenRawZipFS       = (*zipFS)(nil)
+	_ fmt.Stringer       = (*zipFS)(nil)
 )

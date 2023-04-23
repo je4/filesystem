@@ -1,6 +1,7 @@
 package zipasfolder
 
 import (
+	"fmt"
 	"github.com/bluele/gcache"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/pkg/errors"
@@ -68,6 +69,10 @@ type zipAsfolderFS struct {
 	zipCache gcache.Cache
 	lock     sync.RWMutex
 	end      chan bool
+}
+
+func (fsys *zipAsfolderFS) String() string {
+	return fmt.Sprintf("zipAsFolder:%v", fsys.baseFS)
 }
 
 // CReate creates a new file
@@ -250,4 +255,5 @@ var (
 	_ fs.ReadDirFS        = (*zipAsfolderFS)(nil)
 	_ fs.ReadFileFS       = (*zipAsfolderFS)(nil)
 	_ writefs.CloseFS     = (*zipAsfolderFS)(nil)
+	_ fmt.Stringer        = (*zipAsfolderFS)(nil)
 )

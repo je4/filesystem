@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"emperror.dev/errors"
+	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -75,7 +76,10 @@ func (s3FS *s3FSRW) Open(path string) (fs.File, error) {
 	objectInfo, err := object.Stat()
 	if err != nil {
 		object.Close()
-		return nil, fs.ErrNotExist
+		if s3FS.IsNotExist(err) {
+			return nil, fs.ErrNotExist
+		}
+		return nil, errors.Wrapf(err, "cannot stat '%s'", path)
 	}
 	if objectInfo.Err != nil {
 		object.Close()
@@ -156,6 +160,9 @@ func (s3FS *s3FSRW) Remove(path string) error {
 	}
 	ctx := context.Background()
 	if err := s3FS.client.RemoveObject(ctx, bucket, bucketPath, minio.RemoveObjectOptions{}); err != nil {
+		if s3FS.IsNotExist(err) {
+			return fs.ErrNotExist
+		}
 		return errors.Wrapf(err, "cannot remove '%s'", path)
 	}
 	return nil
@@ -257,6 +264,8 @@ func (s3FS *s3FSRW) Stat(path string) (fs.FileInfo, error) {
 		if s3FS.IsNotExist(err) {
 			if s3FS.hasContent(path) {
 				return writefs.NewFileInfoDir(path), nil
+			} else {
+				return nil, fs.ErrNotExist
 			}
 		}
 		return nil, errors.Wrapf(err, "cannot stat '%s'", path)
@@ -292,4 +301,5 @@ var (
 	_ fs.ReadFileFS       = &s3FSRW{}
 	_ fs.StatFS           = &s3FSRW{}
 	_ fs.SubFS            = &s3FSRW{}
+	_ fmt.Stringer        = &s3FSRW{}
 )

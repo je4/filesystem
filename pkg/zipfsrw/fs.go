@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"bufio"
 	"emperror.dev/errors"
+	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/je4/filesystem/v2/pkg/zipfs"
 	"golang.org/x/exp/slices"
@@ -68,6 +69,10 @@ type zipFSRW struct {
 	zipFPBuffer *bufio.Writer
 	name        string
 	tmpName     string
+}
+
+func (zfsrw *zipFSRW) String() string {
+	return fmt.Sprintf("zipFSRW(%s)", zfsrw.name)
 }
 
 func (zfsrw *zipFSRW) Close() error {
@@ -194,4 +199,5 @@ func (zfsrw *zipFSRWBase) Create(path string) (writefs.FileWrite, error) {
 var (
 	_ writefs.ReadWriteFS = &zipFSRW{}
 	_ writefs.CloseFS     = &zipFSRW{}
+	_ fmt.Stringer        = &zipFSRW{}
 )
