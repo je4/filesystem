@@ -29,6 +29,10 @@ type zipFSRW struct {
 	noCompression bool
 }
 
+func (zfsrw *zipFSRW) String() string {
+	return "zipFSRW"
+}
+
 func (zfsrw *zipFSRW) HasChanged() bool {
 	return len(zfsrw.newFiles) > 0
 }
@@ -102,8 +106,22 @@ func (zfsrw *zipFSRW) Create(path string) (writefs.FileWrite, error) {
 	return writefs.NewNopWriteCloser(fp), nil
 }
 
+func (zfsrw *zipFSRW) ReadDir(name string) ([]fs.DirEntry, error) {
+	if zfsrw.zfs == nil {
+		return []fs.DirEntry{}, nil
+	}
+	return fs.ReadDir(zfsrw.zfs, name)
+}
+
+func (zfsrw *zipFSRW) Sub(name string) (fs.FS, error) {
+	return writefs.NewSubFS(zfsrw, name), nil
+}
+
 var (
 	_ writefs.ReadWriteFS = &fsFile{}
 	_ writefs.CloseFS     = &fsFile{}
 	_ fmt.Stringer        = &fsFile{}
+	_ fs.ReadDirFS        = &fsFile{}
+	_ fs.FS               = &fsFile{}
+	_ fs.SubFS            = &fsFile{}
 )

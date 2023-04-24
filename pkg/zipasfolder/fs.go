@@ -123,7 +123,7 @@ func (fsys *zipAsfolderFS) Stat(name string) (fs.FileInfo, error) {
 
 // Sub returns a new zipAsfolderFS which is a subfolder of the current zipAsfolderFS
 func (fsys *zipAsfolderFS) Sub(dir string) (writefs.ReadWriteFS, error) {
-	return NewSubFS(fsys, dir), nil
+	return writefs.NewSubFS(fsys, dir), nil
 }
 
 // ReadFile reads a file from the filesystem

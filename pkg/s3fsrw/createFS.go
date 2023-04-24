@@ -8,16 +8,16 @@ import (
 	"regexp"
 )
 
-type s3Access struct {
-	accessKey string
-	secretKey string
-	url       string
-	useSSL    bool
+type S3Access struct {
+	AccessKey string
+	SecretKey string
+	URL       string
+	UseSSL    bool
 }
 
 var ARNRegexStr = `^arn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):[^:]*`
 
-func NewCreateFSFunc(access map[string]*s3Access, regexpString string, logger *logging.Logger) writefs.CreateFSFunc {
+func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger *logging.Logger) writefs.CreateFSFunc {
 	urnRegexp := regexp.MustCompile(regexpString)
 
 	return func(f *writefs.Factory, path string) (fs.FS, error) {
@@ -40,11 +40,11 @@ func NewCreateFSFunc(access map[string]*s3Access, regexpString string, logger *l
 		subPath, _ := result["relativeid"]
 
 		s3fs, err := NewS3FS(
-			acc.url,
-			acc.accessKey,
-			acc.secretKey,
+			acc.URL,
+			acc.AccessKey,
+			acc.SecretKey,
 			region,
-			acc.useSSL,
+			acc.UseSSL,
 			logger,
 		)
 		if err != nil {

@@ -39,3 +39,16 @@ func Close(fsys fs.FS) error {
 	}
 	return nil
 }
+
+func HasContent(fsys fs.FS) bool {
+	entries, err := fs.ReadDir(fsys, "")
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if entry.Name() != "" {
+			return true
+		}
+	}
+	return false
+}

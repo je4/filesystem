@@ -168,7 +168,7 @@ func (s3FS *s3FSRW) Remove(path string) error {
 }
 
 func (s3FS *s3FSRW) Sub(subfolder string) (fs.FS, error) {
-	return NewSubFS(s3FS, subfolder)
+	return writefs.NewSubFS(s3FS, subfolder), nil
 }
 
 func (s3FS *s3FSRW) String() string {

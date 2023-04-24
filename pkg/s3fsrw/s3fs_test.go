@@ -110,7 +110,7 @@ func TestS3FS(t *testing.T) {
 
 	err = testS3FSFactory.Register(
 		NewCreateFSFunc(
-			map[string]*s3Access{
+			map[string]*S3Access{
 				"local": {
 					minioAccessKey,
 					minioSecretKey,

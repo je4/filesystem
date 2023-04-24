@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func NewCreateFS(noCompression bool) writefs.CreateFSFunc {
+func NewCreateFSFunc(noCompression bool) writefs.CreateFSFunc {
 	return func(f *writefs.Factory, zipFile string) (fs.FS, error) {
 		parts := strings.Split(zipFile, "/")
 		if len(parts) < 2 {

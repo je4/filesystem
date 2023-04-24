@@ -32,10 +32,10 @@ func NewFactory() (*Factory, error) {
 	return f, nil
 }
 
-func (f *Factory) Register(create CreateFSFunc, prefixRegexp string, level levelFS) error {
-	re, err := regexp.Compile(prefixRegexp)
+func (f *Factory) Register(create CreateFSFunc, identifyRegex string, level levelFS) error {
+	re, err := regexp.Compile(identifyRegex)
 	if err != nil {
-		return errors.Wrapf(err, "cannot compile regexp '%s'", prefixRegexp)
+		return errors.Wrapf(err, "cannot compile regexp '%s'", identifyRegex)
 	}
 	// insert new createFS in order of level
 	cs := &createFS{

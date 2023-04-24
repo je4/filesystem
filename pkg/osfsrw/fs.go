@@ -25,6 +25,10 @@ type osFSRW struct {
 	dir string
 }
 
+func (d *osFSRW) String() string {
+	return "osFSRW(" + d.dir + ")"
+}
+
 func (d *osFSRW) Sub(dir string) (fs.FS, error) {
 	return NewFS(filepath.Join(d.dir, dir))
 }

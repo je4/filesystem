@@ -61,7 +61,7 @@ type fsFile struct {
 }
 
 func (zfsrw *fsFile) String() string {
-	return fmt.Sprintf("fsFile(%s)", zfsrw.name)
+	return fmt.Sprintf("fsFile(%v/%s)", zfsrw.baseFS, zfsrw.name)
 }
 
 func (zfsrw *fsFile) Close() error {
