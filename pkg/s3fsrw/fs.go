@@ -15,11 +15,11 @@ import (
 	"net/http"
 )
 
-func NewS3FS(endpoint, accessKeyID, secretAccessKey, bucket, region string, useSSL bool, logger *logging.Logger) (*s3FSRW, error) {
+func NewS3FS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, logger *logging.Logger) (*s3FSRW, error) {
 	var err error
 	fs := &s3FSRW{
-		client:   nil,
-		bucket:   bucket,
+		client: nil,
+		//		bucket:   bucket,
 		region:   region,
 		endpoint: endpoint,
 		logger:   logger,
@@ -48,7 +48,6 @@ func NewS3FS(endpoint, accessKeyID, secretAccessKey, bucket, region string, useS
 
 type s3FSRW struct {
 	client   *minio.Client
-	bucket   string
 	region   string
 	endpoint string
 	logger   *logging.Logger
@@ -71,7 +70,7 @@ func (s3FS *s3FSRW) Open(path string) (fs.File, error) {
 	ctx := context.Background()
 	object, err := s3FS.client.GetObject(ctx, bucket, bucketPath, minio.GetObjectOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot open '%s/%s/%s'", s3FS.client.EndpointURL(), s3FS.bucket, path)
+		return nil, errors.Wrapf(err, "cannot open '%s/%s/%s'", s3FS.client.EndpointURL(), bucket, path)
 	}
 	objectInfo, err := object.Stat()
 	if err != nil {
@@ -274,9 +273,10 @@ func (s3FS *s3FSRW) Stat(path string) (fs.FileInfo, error) {
 }
 
 func (s3FS *s3FSRW) hasContent(prefix string) bool {
+	bucket, bucketPath := extractBucket(prefix)
 	s3FS.logger.Debugf("%s - hasContent(%s)", s3FS.String(), prefix)
 	ctx, cancel := context.WithCancel(context.Background())
-	chanObjectInfo := s3FS.client.ListObjects(ctx, s3FS.bucket, minio.ListObjectsOptions{Prefix: prefix})
+	chanObjectInfo := s3FS.client.ListObjects(ctx, bucket, minio.ListObjectsOptions{Prefix: bucketPath})
 	objectInfo, ok := <-chanObjectInfo
 	if ok {
 		if objectInfo.Err != nil {

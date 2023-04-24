@@ -8,10 +8,17 @@ import (
 	"path/filepath"
 )
 
-func NewFS(dir string) fs.FS {
+func NewFS(dir string) (*osFSRW, error) {
+	stat, err := os.Stat(dir)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	if !stat.IsDir() {
+		return nil, errors.Errorf("not a directory: %s", dir)
+	}
 	return &osFSRW{
 		dir: dir,
-	}
+	}, nil
 }
 
 type osFSRW struct {
@@ -19,7 +26,7 @@ type osFSRW struct {
 }
 
 func (d *osFSRW) Sub(dir string) (fs.FS, error) {
-	return NewFS(filepath.Join(d.dir, dir)), nil
+	return NewFS(filepath.Join(d.dir, dir))
 }
 
 func (d *osFSRW) Remove(path string) error {
@@ -37,7 +44,13 @@ func (d *osFSRW) Open(name string) (fs.File, error) {
 
 func (d *osFSRW) Stat(name string) (fs.FileInfo, error) {
 	fi, err := os.Stat(filepath.Join(d.dir, name))
-	return fi, errors.WithStack(err)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, errors.WithStack(fs.ErrNotExist)
+		}
+		return nil, errors.WithStack(err)
+	}
+	return fi, nil
 }
 
 func (d *osFSRW) Create(path string) (writefs.FileWrite, error) {

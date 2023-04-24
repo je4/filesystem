@@ -19,7 +19,7 @@ type OpenRawZipFS interface {
 
 // NewFS creates a new fs.FS from a readerAt and size
 // it implements fs.FS, fs.ReadDirFS, fs.ReadFileFS, fs.StatFS, fs.SubFS, basefs.IsLockedFS
-func NewFS(r io.ReaderAt, size int64) (fs fs.FS, err error) {
+func NewFS(r io.ReaderAt, size int64) (fs *zipFS, err error) {
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
 		return nil, err

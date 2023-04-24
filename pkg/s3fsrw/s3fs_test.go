@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"net"
 	"os"
+	"regexp"
 	"testing"
 	"time"
 )
@@ -54,6 +55,11 @@ func StartEmbedded() (string, func() error, error) {
 		return "", nil, errors.Wrap(err, "while creating bucket")
 	}
 
+	err = mc.MakeBucket(context.Background(), "test2", mclient.MakeBucketOptions{})
+	if err != nil {
+		return "", nil, errors.Wrap(err, "while creating bucket")
+	}
+
 	return addr, func() error {
 		err := madm.ServiceStop(context.Background())
 		if err != nil {
@@ -90,31 +96,55 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+var testS3FSFactory *writefs.Factory
+
 func TestS3FS(t *testing.T) {
+	var err error
 	minioAccessKey := os.Getenv("MINIO_ACCESS_KEY")
 	minioSecretKey := os.Getenv("MINIO_SECRET_KEY")
 	minioURL := os.Getenv("MINIO_URL")
 
-	/*
-		cred, err := os.ReadFile("./pkg/s3fsrw/credentials.json")
+	testS3FSFactory, err = writefs.NewFactory()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = testS3FSFactory.Register(func(f *writefs.Factory, path string) (fs.FS, error) {
+		urnRegexp := regexp.MustCompile(`^urn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):(?P<relativeid>[^:]*)`)
+		urnMatch := urnRegexp.FindStringSubmatch(path)
+		result := make(map[string]string)
+		for i, name := range urnRegexp.SubexpNames() {
+			if i != 0 && name != "" {
+				result[name] = urnMatch[i]
+			}
+		}
+		if part, ok := result["partition"]; ok && part != "local" {
+			return nil, fmt.Errorf("partition %s not supported", part)
+		}
+		region, _ := result["region"]
+		if namespace, ok := result["namespace"]; ok && namespace != "" {
+			return nil, fmt.Errorf("namespace %s not supported", namespace)
+		}
+		subPath, _ := result["relativeid"]
+
+		s3fs, err := NewS3FS(
+			minioURL,
+			// ts.URL[7:],
+			minioAccessKey,
+			minioSecretKey,
+			region,
+			false,
+			nil,
+		)
 		if err != nil {
-			t.Fatal(err)
+			return nil, err
 		}
-		var credentials = map[string]string{}
-		if err := json.Unmarshal(cred, &credentials); err != nil {
-			t.Fatal(err)
+		if subPath != "" {
+			return s3fs.Sub(subPath)
 		}
-	*/
-	s3fs, err := NewS3FS(
-		minioURL,
-		// ts.URL[7:],
-		minioAccessKey,
-		minioSecretKey,
-		"test",
-		"",
-		false,
-		nil,
-	)
+		return s3fs, nil
+	}, `^urn:(?P<service>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):[^:]*`, writefs.MediumFS)
+
+	s3fs, err := testS3FSFactory.Get("urn:local:s3:::")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,6 +173,35 @@ func TestS3FS(t *testing.T) {
 			}
 		}
 	})
+	t.Run("create & read 2", func(t *testing.T) {
+		subFS, err := fs.Sub(s3fs, "test2")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for i := 0; i < 10; i++ {
+			testx := fmt.Sprintf("test%d", i)
+			fp, err := writefs.Create(subFS, ""+testx+".txt")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := fp.Write([]byte(testx)); err != nil {
+				t.Fatal(err)
+			}
+			if err := fp.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for i := 0; i < 10; i++ {
+			testx := fmt.Sprintf("test%d", i)
+			data, err := fs.ReadFile(subFS, ""+testx+".txt")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(data) != testx {
+				t.Fatal("wrong data")
+			}
+		}
+	})
 	t.Run("walkdir", func(t *testing.T) {
 		fs.WalkDir(s3fs, "", func(path string, entry fs.DirEntry, err error) error {
 			if entry == nil {
@@ -153,9 +212,9 @@ func TestS3FS(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				t.Logf("     [f] %s [%v]", path, fi.Size())
+				t.Logf("     [f] %v/%s [%v]", s3fs, path, fi.Size())
 			} else {
-				t.Logf("     [d] %s", path)
+				t.Logf("     [d] %v/%s", s3fs, path)
 			}
 			return nil
 		})

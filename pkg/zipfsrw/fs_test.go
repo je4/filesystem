@@ -24,7 +24,12 @@ var baseFS fs.FS       // base file system
 var zipFileName string // name of the zip file
 
 func TestMain(m *testing.M) {
-	baseFS = osfsrw.NewFS(os.TempDir())
+	var err error
+	baseFS, err = osfsrw.NewFS(os.TempDir())
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	zipFileName = tempFileName("zipfsrwtest_", ".zip")
 	os.Exit(m.Run())
 }
@@ -32,7 +37,7 @@ func TestMain(m *testing.M) {
 func TestZipFSRW(t *testing.T) {
 	t.Cleanup(func() {
 		if err := writefs.Remove(baseFS, zipFileName); err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 	})
 
@@ -46,7 +51,7 @@ func testZipFSRW_Create(t *testing.T) {
 	// create a new zip file
 
 	// create a new zip file system
-	zipFS, err := NewZipFSRW(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +80,7 @@ func testZipFSRW_Create(t *testing.T) {
 
 func testZipFSRW_Read(t *testing.T) {
 	// open the zip file system again
-	zipFS, err := NewZipFSRW(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +117,7 @@ func testZipFSRW_Update(t *testing.T) {
 	// create a new zip file
 
 	// create a new zip file system
-	zipFS, err := NewZipFSRW(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +148,7 @@ func testZipFSRW_Update(t *testing.T) {
 
 func testZipFSRW_ReadUpdate(t *testing.T) {
 	// open the zip file system again
-	zipFS, err := NewZipFSRW(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName)
 	if err != nil {
 		t.Fatal(err)
 	}

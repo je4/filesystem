@@ -3,7 +3,6 @@ package zipfsrw
 
 import (
 	"archive/zip"
-	"bufio"
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
@@ -13,133 +12,26 @@ import (
 	"io/fs"
 )
 
-// NewZipFSRW creates a new ReadWriteFS
-// If the file does not exist, it will be created on the first write operation.
-// If the file exists, it will be opened and read.
-// Changes will be written to an additional file and then renamed to the original file.
-func NewZipFSRW(baseFS fs.FS, path string) (writefs.ReadWriteFS, error) {
-	var fpat io.ReaderAt
-	var size int64
-	var fp fs.File
-	var ok bool
-	newpath := path
-	// if target file exists, open it and create a zipfs
-	stat, err := fs.Stat(baseFS, path)
-	if err == nil {
-		size = stat.Size()
-		fp, err = baseFS.Open(path)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot open zip file '%s'", path)
-		}
-		fpat, ok = fp.(io.ReaderAt)
-		if !ok {
-			return nil, errors.Errorf("cannot cast file '%s' to io.WriterAt", path)
-		}
-		newpath = newpath + ".tmp"
-	}
-	// create new file
-	newfp, err := writefs.Create(baseFS, newpath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create zip file '%s'", newpath)
-	}
-	// add a buffer to the file
-	newFPBuffer := bufio.NewWriterSize(newfp, 1024*1024)
-
-	zipFSRWBase, err := NewZipFSRWBase(newFPBuffer, fpat, size)
-	if err != nil {
-		return nil, errors.Wrap(err, "cannot create zipFSRWBase")
-	}
-
-	return &zipFSRW{
-		zipFSRWBase: zipFSRWBase,
-		name:        path,
-		tmpName:     newpath,
-		baseFS:      baseFS,
-		fp:          fp,
-		zipFP:       newfp,
-		zipFPBuffer: newFPBuffer,
-	}, nil
-}
-
-type zipFSRW struct {
-	*zipFSRWBase
-	baseFS      fs.FS
-	fp          fs.File
-	zipFP       writefs.FileWrite
-	zipFPBuffer *bufio.Writer
-	name        string
-	tmpName     string
-}
-
-func (zfsrw *zipFSRW) String() string {
-	return fmt.Sprintf("zipFSRW(%s)", zfsrw.name)
-}
-
-func (zfsrw *zipFSRW) Close() error {
-	var errs = []error{}
-
-	if err := zfsrw.zipFSRWBase.Close(); err != nil {
-		errs = append(errs, err)
-	}
-	if err := zfsrw.zipFPBuffer.Flush(); err != nil {
-		errs = append(errs, err)
-	}
-	if err := zfsrw.zipFP.Close(); err != nil {
-		errs = append(errs, err)
-	}
-	if zfsrw.fp != nil {
-		if err := zfsrw.fp.Close(); err != nil {
-			errs = append(errs, err)
-		}
-		if zfsrw.HasChanged() {
-			if err := writefs.Remove(zfsrw.baseFS, zfsrw.name); err != nil {
-				errs = append(errs, err)
-			}
-			if err := writefs.Rename(zfsrw.baseFS, zfsrw.tmpName, zfsrw.name); err != nil {
-				errs = append(errs, err)
-			}
-		} else {
-			if err := writefs.Remove(zfsrw.baseFS, zfsrw.tmpName); err != nil {
-				errs = append(errs, err)
-			}
-		}
-
-	}
-	if len(errs) > 0 {
-		return errors.WithStack(errors.Combine(errs...))
-	}
-
-	return nil
-}
-
-func NewZipFSRWBase(writer io.Writer, reader io.ReaderAt, size int64) (*zipFSRWBase, error) {
+func NewFS(writer io.Writer, orzfs zipfs.OpenRawZipFS) (*zipFSRW, error) {
 	zipWriter := zip.NewWriter(writer)
-	var orzfs zipfs.OpenRawZipFS
-	if reader != nil {
-		zfs, err := zipfs.NewFS(reader, size)
-		if err != nil {
-			return nil, errors.Wrapf(err, "cannot open zip file")
-		}
-		orzfs = zfs.(zipfs.OpenRawZipFS)
-	}
-	return &zipFSRWBase{
+	return &zipFSRW{
 		zfs:       orzfs,
 		zipWriter: zipWriter,
 		newFiles:  []string{},
 	}, nil
 }
 
-type zipFSRWBase struct {
+type zipFSRW struct {
 	zfs       zipfs.OpenRawZipFS
 	zipWriter *zip.Writer
 	newFiles  []string
 }
 
-func (zfsrw *zipFSRWBase) HasChanged() bool {
+func (zfsrw *zipFSRW) HasChanged() bool {
 	return len(zfsrw.newFiles) > 0
 }
 
-func (zfsrw *zipFSRWBase) Close() error {
+func (zfsrw *zipFSRW) Close() error {
 	var errs = []error{}
 
 	// copy old compressed files to new zip file
@@ -163,6 +55,10 @@ func (zfsrw *zipFSRWBase) Close() error {
 				}
 			}
 		}
+
+		if err := writefs.Close(zfsrw.zfs); err != nil {
+			errs = append(errs, err)
+		}
 	}
 
 	if err := zfsrw.zipWriter.Close(); err != nil {
@@ -171,7 +67,7 @@ func (zfsrw *zipFSRWBase) Close() error {
 	return nil
 }
 
-func (zfsrw *zipFSRWBase) Open(name string) (fs.File, error) {
+func (zfsrw *zipFSRW) Open(name string) (fs.File, error) {
 	name = clearPath(name)
 	if slices.Contains(zfsrw.newFiles, name) {
 		return nil, errors.Wrapf(fs.ErrPermission, "file '%s' is not yet written to disk", name)
@@ -186,7 +82,7 @@ func (zfsrw *zipFSRWBase) Open(name string) (fs.File, error) {
 	return fp, nil
 }
 
-func (zfsrw *zipFSRWBase) Create(path string) (writefs.FileWrite, error) {
+func (zfsrw *zipFSRW) Create(path string) (writefs.FileWrite, error) {
 	path = clearPath(path)
 	fp, err := zfsrw.zipWriter.Create(path)
 	if err != nil {
@@ -197,7 +93,7 @@ func (zfsrw *zipFSRWBase) Create(path string) (writefs.FileWrite, error) {
 }
 
 var (
-	_ writefs.ReadWriteFS = &zipFSRW{}
-	_ writefs.CloseFS     = &zipFSRW{}
-	_ fmt.Stringer        = &zipFSRW{}
+	_ writefs.ReadWriteFS = &fsFile{}
+	_ writefs.CloseFS     = &fsFile{}
+	_ fmt.Stringer        = &fsFile{}
 )
