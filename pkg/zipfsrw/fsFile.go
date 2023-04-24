@@ -13,7 +13,7 @@ import (
 // If the file does not exist, it will be created on the first write operation.
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
-func NewFSFile(baseFS fs.FS, path string) (writefs.ReadWriteFS, error) {
+func NewFSFile(baseFS fs.FS, path string, noCompression bool) (writefs.ReadWriteFS, error) {
 	newpath := path
 
 	var zfs zipfs.OpenRawZipFS
@@ -35,7 +35,7 @@ func NewFSFile(baseFS fs.FS, path string) (writefs.ReadWriteFS, error) {
 	// add a buffer to the file
 	newFPBuffer := bufio.NewWriterSize(fp, 1024*1024)
 
-	zipFSRWBase, err := NewFS(newFPBuffer, zfs)
+	zipFSRWBase, err := NewFS(newFPBuffer, zfs, noCompression)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create zipFSRW")
 	}

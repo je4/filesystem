@@ -12,7 +12,6 @@ import (
 	"io/fs"
 	"net"
 	"os"
-	"regexp"
 	"testing"
 	"time"
 )
@@ -108,43 +107,22 @@ func TestS3FS(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = testS3FSFactory.Register(func(f *writefs.Factory, path string) (fs.FS, error) {
-		urnRegexp := regexp.MustCompile(`^urn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):(?P<relativeid>[^:]*)`)
-		urnMatch := urnRegexp.FindStringSubmatch(path)
-		result := make(map[string]string)
-		for i, name := range urnRegexp.SubexpNames() {
-			if i != 0 && name != "" {
-				result[name] = urnMatch[i]
-			}
-		}
-		if part, ok := result["partition"]; ok && part != "local" {
-			return nil, fmt.Errorf("partition %s not supported", part)
-		}
-		region, _ := result["region"]
-		if namespace, ok := result["namespace"]; ok && namespace != "" {
-			return nil, fmt.Errorf("namespace %s not supported", namespace)
-		}
-		subPath, _ := result["relativeid"]
 
-		s3fs, err := NewS3FS(
-			minioURL,
-			// ts.URL[7:],
-			minioAccessKey,
-			minioSecretKey,
-			region,
-			false,
+	err = testS3FSFactory.Register(
+		NewCreateFSFunc(
+			map[string]*s3Access{
+				"local": {
+					minioAccessKey,
+					minioSecretKey,
+					minioURL,
+					false,
+				},
+			},
+			ARNRegexStr,
 			nil,
-		)
-		if err != nil {
-			return nil, err
-		}
-		if subPath != "" {
-			return s3fs.Sub(subPath)
-		}
-		return s3fs, nil
-	}, `^urn:(?P<service>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):[^:]*`, writefs.MediumFS)
+		), ARNRegexStr, writefs.MediumFS)
 
-	s3fs, err := testS3FSFactory.Get("urn:local:s3:::")
+	s3fs, err := testS3FSFactory.Get("arn:local:s3:::")
 	if err != nil {
 		t.Fatal(err)
 	}

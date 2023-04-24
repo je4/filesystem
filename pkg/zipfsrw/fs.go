@@ -12,19 +12,21 @@ import (
 	"io/fs"
 )
 
-func NewFS(writer io.Writer, orzfs zipfs.OpenRawZipFS) (*zipFSRW, error) {
+func NewFS(writer io.Writer, orzfs zipfs.OpenRawZipFS, noCompression bool) (*zipFSRW, error) {
 	zipWriter := zip.NewWriter(writer)
 	return &zipFSRW{
-		zfs:       orzfs,
-		zipWriter: zipWriter,
-		newFiles:  []string{},
+		zfs:           orzfs,
+		zipWriter:     zipWriter,
+		newFiles:      []string{},
+		noCompression: noCompression,
 	}, nil
 }
 
 type zipFSRW struct {
-	zfs       zipfs.OpenRawZipFS
-	zipWriter *zip.Writer
-	newFiles  []string
+	zfs           zipfs.OpenRawZipFS
+	zipWriter     *zip.Writer
+	newFiles      []string
+	noCompression bool
 }
 
 func (zfsrw *zipFSRW) HasChanged() bool {
@@ -84,7 +86,15 @@ func (zfsrw *zipFSRW) Open(name string) (fs.File, error) {
 
 func (zfsrw *zipFSRW) Create(path string) (writefs.FileWrite, error) {
 	path = clearPath(path)
-	fp, err := zfsrw.zipWriter.Create(path)
+	header := &zip.FileHeader{
+		Name: path,
+	}
+	if zfsrw.noCompression {
+		header.Method = zip.Store
+	} else {
+		header.Method = zip.Deflate
+	}
+	fp, err := zfsrw.zipWriter.CreateHeader(header)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create file '%s'", path)
 	}

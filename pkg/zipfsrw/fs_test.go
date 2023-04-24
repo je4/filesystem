@@ -51,7 +51,7 @@ func testZipFSRW_Create(t *testing.T) {
 	// create a new zip file
 
 	// create a new zip file system
-	zipFS, err := NewFSFile(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +80,7 @@ func testZipFSRW_Create(t *testing.T) {
 
 func testZipFSRW_Read(t *testing.T) {
 	// open the zip file system again
-	zipFS, err := NewFSFile(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func testZipFSRW_Update(t *testing.T) {
 	// create a new zip file
 
 	// create a new zip file system
-	zipFS, err := NewFSFile(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +148,7 @@ func testZipFSRW_Update(t *testing.T) {
 
 func testZipFSRW_ReadUpdate(t *testing.T) {
 	// open the zip file system again
-	zipFS, err := NewFSFile(baseFS, zipFileName)
+	zipFS, err := NewFSFile(baseFS, zipFileName, false)
 	if err != nil {
 		t.Fatal(err)
 	}
