@@ -50,6 +50,9 @@ func (zfs *zipFS) Sub(dir string) (fs.FS, error) {
 func (zfs *zipFS) Stat(name string) (fs.FileInfo, error) {
 	name = clearPath(name)
 	for _, f := range zfs.File {
+		if strings.HasPrefix(f.Name, name) && len(f.Name) != len(name) {
+			return writefs.NewFileInfoDir(name), nil
+		}
 		if f.Name == name {
 			return f.FileInfo(), nil
 		}
