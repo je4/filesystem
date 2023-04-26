@@ -35,13 +35,13 @@ func NewFSFileChecksums(baseFS fs.FS, path string, noCompression bool, algs []ch
 		return nil, errors.Wrapf(err, "cannot create zip file '%s'", newpath)
 	}
 
-	csWriter, err := checksum.NewChecksumWriter(algs, fp)
+	// add a buffer to the file
+	newFPBuffer := bufio.NewWriterSize(fp, 1024*1024)
+
+	csWriter, err := checksum.NewChecksumWriter(algs, newFPBuffer)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create checksum writer for '%s'", newpath)
 	}
-
-	// add a buffer to the file
-	newFPBuffer := bufio.NewWriterSize(csWriter, 1024*1024)
 
 	zipFSRWBase, err := NewFS(newFPBuffer, zfs, noCompression)
 	if err != nil {
@@ -69,45 +69,37 @@ type fsFileChecksums struct {
 }
 
 func (zfsrw *fsFileChecksums) String() string {
-	return fmt.Sprintf("fsFile(%v/%s)", zfsrw.baseFS, zfsrw.name)
+	return fmt.Sprintf("fsFileChecksums(%v/%s)", zfsrw.baseFS, zfsrw.name)
 }
 
 func (zfsrw *fsFileChecksums) Close() error {
 	var errs = []error{}
 
-	if err := zfsrw.zipFSRW.Close(); err != nil {
+	if err := zfsrw.fsFile.Close(); err != nil {
 		errs = append(errs, err)
 	}
-	if err := zfsrw.zipFPBuffer.Flush(); err != nil {
+	if err := zfsrw.csWriter.Close(); err != nil {
 		errs = append(errs, err)
 	}
-	if err := zfsrw.zipFP.Close(); err != nil {
-		errs = append(errs, err)
-	}
-	if zfsrw.HasChanged() && zfsrw.name != zfsrw.tmpName {
-		if err := writefs.Remove(zfsrw.baseFS, zfsrw.name); err != nil {
-			errs = append(errs, err)
-		}
-		if err := writefs.Rename(zfsrw.baseFS, zfsrw.tmpName, zfsrw.name); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	checksums, err := zfsrw.csWriter.GetChecksums()
-	if err != nil {
-		errs = append(errs, err)
-	}
-	for alg, cs := range checksums {
-		sideCar := fmt.Sprintf("%s.%s", zfsrw.name, strings.ToLower(string(alg)))
-		wfp, err := writefs.Create(zfsrw.baseFS, sideCar)
+	if zfsrw.HasChanged() {
+		checksums, err := zfsrw.csWriter.GetChecksums()
 		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "cannot create sidecar file '%s'", sideCar))
+			errs = append(errs, err)
 		}
-		if _, err := wfp.Write([]byte(cs)); err != nil {
-			errs = append(errs, errors.Wrapf(err, "cannot write to sidecar file '%s'", sideCar))
-		}
-		if err := wfp.Close(); err != nil {
-			errs = append(errs, errors.Wrapf(err, "cannot close sidecar file '%s'", sideCar))
+		if len(errs) == 0 {
+			for alg, cs := range checksums {
+				sideCar := fmt.Sprintf("%s.%s", zfsrw.name, strings.ToLower(string(alg)))
+				wfp, err := writefs.Create(zfsrw.baseFS, sideCar)
+				if err != nil {
+					errs = append(errs, errors.Wrapf(err, "cannot create sidecar file '%s'", sideCar))
+				}
+				if _, err := wfp.Write([]byte(fmt.Sprintf("%s *%s", cs, zfsrw.name))); err != nil {
+					errs = append(errs, errors.Wrapf(err, "cannot write to sidecar file '%s'", sideCar))
+				}
+				if err := wfp.Close(); err != nil {
+					errs = append(errs, errors.Wrapf(err, "cannot close sidecar file '%s'", sideCar))
+				}
+			}
 		}
 	}
 

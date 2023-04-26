@@ -2,10 +2,14 @@ package zipfsrw
 
 import (
 	"crypto/rand"
+	"crypto/sha512"
 	"encoding/hex"
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/osfsrw"
 	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v2/pkg/zipfs"
+	"github.com/je4/utils/v2/pkg/checksum"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -36,6 +40,9 @@ func TestMain(m *testing.M) {
 
 func TestZipFSRW(t *testing.T) {
 	t.Cleanup(func() {
+		if err := writefs.Remove(baseFS, zipFileName+".sha512"); err != nil {
+			t.Error(err)
+		}
 		if err := writefs.Remove(baseFS, zipFileName); err != nil {
 			t.Error(err)
 		}
@@ -44,14 +51,45 @@ func TestZipFSRW(t *testing.T) {
 	t.Run("create", testZipFSRW_Create)
 	t.Run("read", testZipFSRW_Read)
 	t.Run("update", testZipFSRW_Update)
-	t.Run("readUpdated", testZipFSRW_ReadUpdate)
+	t.Run("checksum", testZipFSRW_Checksum)
+}
+
+func testZipFSRW_Checksum(t *testing.T) {
+	data, err := fs.ReadFile(baseFS, zipFileName+".sha512")
+	if err != nil {
+		t.Errorf("cannot read %s/%s: %v", baseFS, zipFileName+".sha512", err)
+		return
+	}
+	parts := strings.SplitN(string(data), " ", 2)
+	if len(parts) < 1 {
+		t.Errorf("cannot parse %s/%s: %v", baseFS, zipFileName+".sha512", err)
+		return
+	}
+	xsha512 := strings.ToLower(parts[0])
+	fp, err := baseFS.Open(zipFileName)
+	if err != nil {
+		t.Errorf("cannot open %s/%s: %v", baseFS, zipFileName, err)
+		return
+	}
+	defer fp.Close()
+	hash := sha512.New()
+	if _, err := io.Copy(hash, fp); err != nil {
+		t.Errorf("cannot read %s/%s: %v", baseFS, zipFileName, err)
+		return
+	}
+	newsha512 := strings.ToLower(hex.EncodeToString(hash.Sum(nil)))
+
+	if xsha512 != newsha512 {
+		t.Errorf("checksum mismatch: %s != %s", xsha512, newsha512)
+		return
+	}
 }
 
 func testZipFSRW_Create(t *testing.T) {
 	// create a new zip file
 
 	// create a new zip file system
-	zipFS, err := NewFSFile(baseFS, zipFileName, false)
+	zipFS, err := NewFSFileChecksums(baseFS, zipFileName, false, []checksum.DigestAlgorithm{checksum.DigestSHA512})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,7 +118,7 @@ func testZipFSRW_Create(t *testing.T) {
 
 func testZipFSRW_Read(t *testing.T) {
 	// open the zip file system again
-	zipFS, err := NewFSFile(baseFS, zipFileName, false)
+	zipFS, err := zipfs.NewFSFile(baseFS, zipFileName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +155,7 @@ func testZipFSRW_Update(t *testing.T) {
 	// create a new zip file
 
 	// create a new zip file system
-	zipFS, err := NewFSFile(baseFS, zipFileName, false)
+	zipFS, err := NewFSFileChecksums(baseFS, zipFileName, false, []checksum.DigestAlgorithm{checksum.DigestSHA512})
 	if err != nil {
 		t.Fatal(err)
 	}

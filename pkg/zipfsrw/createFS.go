@@ -3,6 +3,7 @@ package zipfsrw
 import (
 	"emperror.dev/errors"
 	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/checksum"
 	"io/fs"
 	"strings"
 )
@@ -24,22 +25,41 @@ func NewCreateFSFunc(noCompression bool) writefs.CreateFSFunc {
 		return zipFS, nil
 	}
 }
-func createFS(f *writefs.Factory, zipFile string) (fs.FS, error) {
-	parts := strings.Split(zipFile, "/")
-	if len(parts) < 2 {
-		return nil, errors.Errorf("invalid zip path: %s", zipFile)
+
+func NewCreateFSChecksumFunc(noCompression bool, algs []checksum.DigestAlgorithm) writefs.CreateFSFunc {
+	return func(f *writefs.Factory, zipFile string) (fs.FS, error) {
+		parts := strings.Split(zipFile, "/")
+		if len(parts) < 2 {
+			return nil, errors.Errorf("invalid zip path: %s", zipFile)
+		}
+		baseFS, err := f.Get(strings.Join(parts[:len(parts)-1], "/"))
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot get base filesystem for '%s'", zipFile)
+		}
+		zipFS, err := NewFSFileChecksums(baseFS, parts[len(parts)-1], noCompression, algs)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot create zip filesystem for '%s'", zipFile)
+		}
+		return zipFS, nil
 	}
-	baseFS, err := f.Get(strings.Join(parts[:len(parts)-1], "/"))
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot get base filesystem for '%s'", zipFile)
-	}
-	zipFS, err := NewFSFile(baseFS, parts[len(parts)-1], false)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create zip filesystem for '%s'", zipFile)
-	}
-	return zipFS, nil
 }
 
-var (
-	_ writefs.CreateFSFunc = createFS
-)
+func NewCreateFSEncryptedChecksumFunc(noCompression bool, algs []checksum.DigestAlgorithm, keyUri string) writefs.CreateFSFunc {
+	return func(f *writefs.Factory, zipFile string) (fs.FS, error) {
+		parts := strings.Split(zipFile, "/")
+		if len(parts) < 2 {
+			return nil, errors.Errorf("invalid zip path: %s", zipFile)
+		}
+		baseFS, err := f.Get(strings.Join(parts[:len(parts)-1], "/"))
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot get base filesystem for '%s'", zipFile)
+		}
+
+		zipFS, err := NewFSFileEncryptedChecksums(baseFS, parts[len(parts)-1], noCompression, algs, keyUri)
+		//		zipFS, err := NewFSFileChecksums(baseFS, parts[len(parts)-1], noCompression, algs)
+		if err != nil {
+			return nil, errors.Wrapf(err, "cannot create zip filesystem for '%s'", zipFile)
+		}
+		return zipFS, nil
+	}
+}

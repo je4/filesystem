@@ -20,7 +20,7 @@ func TestZipFSRWFactory(t *testing.T) {
 	if err := factory.Register(osfsrw.NewCreateFSFunc(), "^file://", writefs.MediumFS); err != nil {
 		t.Fatal(err)
 	}
-	if err := factory.Register(NewCreateFS(false), "\\.zip$", writefs.HighFS); err != nil {
+	if err := factory.Register(NewCreateFSFunc(false), "\\.zip$", writefs.HighFS); err != nil {
 		t.Fatal(err)
 	}
 

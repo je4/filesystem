@@ -19,3 +19,7 @@ type RemoveFS interface {
 type CloseFS interface {
 	Close() error
 }
+
+type WriteFileFS interface {
+	WriteFile(name string, data []byte) error
+}

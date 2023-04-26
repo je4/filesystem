@@ -40,6 +40,24 @@ func Close(fsys fs.FS) error {
 	return nil
 }
 
+func WriteFile(fsys fs.FS, name string, data []byte) error {
+	if _fsys, ok := fsys.(WriteFileFS); ok {
+		return _fsys.WriteFile(name, data)
+	}
+	fp, err := Create(fsys, name)
+	if err != nil {
+		return errors.Wrapf(err, "cannot create file '%s'", name)
+	}
+	if _, err := fp.Write(data); err != nil {
+		fp.Close()
+		return errors.Wrapf(err, "cannot write file '%s'", name)
+	}
+	if err := fp.Close(); err != nil {
+		return errors.Wrapf(err, "cannot close file '%s'", name)
+	}
+	return nil
+}
+
 func HasContent(fsys fs.FS) bool {
 	entries, err := fs.ReadDir(fsys, "")
 	if err != nil {
