@@ -14,6 +14,8 @@ import (
 // If the file does not exist, it will be created on the first write operation.
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
+// additional writers will added via io.MultiWriter
+// additional writers will not be closed
 func NewFSFile(baseFS fs.FS, path string, noCompression bool, writers ...io.Writer) (*fsFile, error) {
 	writerPath := path
 
