@@ -25,7 +25,7 @@ func tempFileName(prefix, suffix string) string {
 }
 
 var baseFS fs.FS       // base file system
-var zipFileName string // name of the zip file
+var zipFileName string // path of the zip file
 
 func TestMain(m *testing.M) {
 	var err error

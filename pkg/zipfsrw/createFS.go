@@ -56,7 +56,7 @@ func NewCreateFSEncryptedChecksumFunc(noCompression bool, algs []checksum.Digest
 		}
 
 		zipFS, err := NewFSFileEncryptedChecksums(baseFS, parts[len(parts)-1], noCompression, algs, keyUri)
-		//		zipFS, err := NewFSFileChecksums(baseFS, parts[len(parts)-1], noCompression, algs)
+		//		zipReader, err := NewFSFileChecksums(baseFS, parts[len(parts)-1], noCompression, algs)
 		if err != nil {
 			return nil, errors.Wrapf(err, "cannot create zip filesystem for '%s'", zipFile)
 		}

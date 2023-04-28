@@ -8,6 +8,11 @@ import (
 	"io/fs"
 )
 
+type OpenRawZipCloserFS interface {
+	OpenRawZipFS
+	io.Closer
+}
+
 func NewFSFile(baseFS fs.FS, path string) (*fsFile, error) {
 	stat, err := fs.Stat(baseFS, path)
 	if err != nil {
@@ -22,7 +27,9 @@ func NewFSFile(baseFS fs.FS, path string) (*fsFile, error) {
 		return nil, errors.Errorf("cannot cast reader of file '%s' to io.ReaderAt", path)
 	}
 	zfs, err := NewFS(fpAt, stat.Size())
-
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot open zipfs for file '%s'", path)
+	}
 	return &fsFile{
 		zipFS: zfs,
 		fp:    fp,

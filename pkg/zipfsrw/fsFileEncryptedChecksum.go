@@ -9,7 +9,6 @@ import (
 	"github.com/google/tink/go/core/registry"
 	"github.com/google/tink/go/keyset"
 	"github.com/je4/filesystem/v2/pkg/writefs"
-	"github.com/je4/filesystem/v2/pkg/zipfs"
 	"github.com/je4/utils/v2/pkg/checksum"
 	"github.com/je4/utils/v2/pkg/encrypt"
 	"io"
@@ -22,37 +21,10 @@ import (
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
 func NewFSFileEncryptedChecksums(baseFS fs.FS, path string, noCompression bool, algs []checksum.DigestAlgorithm, keyUri string) (writefs.ReadWriteFS, error) {
-	newpath := path
-
-	var zfs zipfs.OpenRawZipFS
-
-	if xfs, err := zipfs.NewFSFile(baseFS, path); err != nil {
-		if errors.Cause(err) != fs.ErrNotExist {
-			return nil, errors.Wrapf(err, "cannot open zip file '%s'", path)
-		}
-	} else {
-		zfs = xfs
-		newpath = path + ".tmp"
-	}
-
-	// create new file
-	fp, err := writefs.Create(baseFS, newpath)
+	// create encrypted file
+	encFP, err := writefs.Create(baseFS, path+".aes")
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create zip file '%s'", newpath)
-	}
-
-	// add a buffer to the file
-	newFPBuffer := bufio.NewWriterSize(fp, 1024*1024)
-
-	csWriter, err := checksum.NewChecksumWriter(algs, newFPBuffer)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create checksum writer for '%s'", newpath)
-	}
-
-	// create new file
-	encFP, err := writefs.Create(baseFS, newpath+".aes")
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create zip file '%s'", newpath)
+		return nil, errors.Wrapf(err, "cannot create zip file '%s'", path)
 	}
 
 	// add a buffer to the file
@@ -60,39 +32,29 @@ func NewFSFileEncryptedChecksums(baseFS fs.FS, path string, noCompression bool, 
 
 	csEncWriter, err := checksum.NewChecksumWriter(algs, newEncFPBuffer)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create checksum writer for '%s'", newpath+".aes")
+		return nil, errors.Wrapf(err, "cannot create checksum writer for '%s'", path+".aes")
 	}
 
-	encWriter, err := encrypt.NewEncryptWriterAESGCM(csEncWriter, []byte(newpath), nil, csWriter)
+	encWriter, err := encrypt.NewEncryptWriterAESGCM(csEncWriter, []byte(path), nil)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot create encrypt writer for '%s'", newpath+".aes")
+		return nil, errors.Wrapf(err, "cannot create encrypt writer for '%s'", path+".aes")
 	}
 
 	handle := encWriter.GetKeysetHandle()
-	zipFSRWBase, err := NewFS(encWriter, zfs, noCompression)
+
+	zipFS, err := NewFSFileChecksums(baseFS, path, noCompression, algs, encWriter)
 	if err != nil {
-		return nil, errors.Wrap(err, "cannot create zipFSRW")
+		return nil, errors.Wrap(err, "cannot create zipFS")
 	}
 
 	return &fsFileEncryptedChecksums{
-		fsFileChecksums: &fsFileChecksums{
-			fsFile: &fsFile{
-				zipFSRW:     zipFSRWBase,
-				name:        path,
-				tmpName:     newpath,
-				baseFS:      baseFS,
-				zipFP:       fp,
-				zipFPBuffer: newFPBuffer,
-			},
-			csWriter: csWriter,
-			csAlgs:   algs,
-		},
-		aad:         []byte(newpath),
-		handle:      handle,
-		encWriter:   encWriter,
-		keyURI:      keyUri,
-		csEncWriter: csEncWriter,
-		csEncBuffer: newEncFPBuffer,
+		fsFileChecksums: zipFS,
+		aad:             []byte(path),
+		handle:          handle,
+		encWriter:       encWriter,
+		keyURI:          keyUri,
+		csEncWriter:     csEncWriter,
+		csEncBuffer:     newEncFPBuffer,
 	}, nil
 }
 
@@ -107,7 +69,7 @@ type fsFileEncryptedChecksums struct {
 }
 
 func (zfsrw *fsFileEncryptedChecksums) String() string {
-	return fmt.Sprintf("fsFileEncryptedChecksums(%v/%s)", zfsrw.baseFS, zfsrw.name)
+	return fmt.Sprintf("fsFileEncryptedChecksums(%v/%s)", zfsrw.baseFS, zfsrw.path)
 }
 
 func (zfsrw *fsFileEncryptedChecksums) Close() error {
@@ -136,7 +98,7 @@ func (zfsrw *fsFileEncryptedChecksums) Close() error {
 			errs = append(errs, errors.Wrapf(err, "cannot get AEAD for entry '%s'", zfsrw.keyURI))
 		}
 
-		keyFileName := zfsrw.name + ".aes.key.json"
+		keyFileName := zfsrw.path + ".aes.key.json"
 		keyBuf := bytes.NewBuffer(nil)
 		wr := keyset.NewBinaryWriter(keyBuf)
 
@@ -162,12 +124,12 @@ func (zfsrw *fsFileEncryptedChecksums) Close() error {
 		}
 		if len(errs) == 0 {
 			for alg, cs := range checksums {
-				sideCar := fmt.Sprintf("%s.aes.%s", zfsrw.name, strings.ToLower(string(alg)))
+				sideCar := fmt.Sprintf("%s.aes.%s", zfsrw.path, strings.ToLower(string(alg)))
 				wfp, err := writefs.Create(zfsrw.baseFS, sideCar)
 				if err != nil {
 					errs = append(errs, errors.Wrapf(err, "cannot create sidecar file '%s'", sideCar))
 				}
-				if _, err := wfp.Write([]byte(fmt.Sprintf("%s *%s.aes", cs, zfsrw.name))); err != nil {
+				if _, err := wfp.Write([]byte(fmt.Sprintf("%s *%s.aes", cs, zfsrw.path))); err != nil {
 					errs = append(errs, errors.Wrapf(err, "cannot write to sidecar file '%s'", sideCar))
 				}
 				if err := wfp.Close(); err != nil {
