@@ -12,13 +12,14 @@ import (
 	"io/fs"
 )
 
-func NewFS(writer io.Writer, zipFS zipfs.OpenRawZipFS, noCompression bool) (*zipFSRW, error) {
+func NewFS(writer io.Writer, zipFS zipfs.OpenRawZipFS, noCompression bool, name string) (*zipFSRW, error) {
 	zipWriter := zip.NewWriter(writer)
 	return &zipFSRW{
 		zipReader:     zipFS,
 		zipWriter:     zipWriter,
 		newFiles:      []string{},
 		noCompression: noCompression,
+		name:          name,
 	}, nil
 }
 
@@ -27,6 +28,7 @@ type zipFSRW struct {
 	zipWriter     *zip.Writer
 	newFiles      []string
 	noCompression bool
+	name          string
 }
 
 func (zfsrw *zipFSRW) Stat(name string) (fs.FileInfo, error) {
@@ -37,7 +39,7 @@ func (zfsrw *zipFSRW) Stat(name string) (fs.FileInfo, error) {
 }
 
 func (zfsrw *zipFSRW) String() string {
-	return "zipFSRW"
+	return fmt.Sprintf("zipFSRW(%s)", zfsrw.name)
 }
 
 func (zfsrw *zipFSRW) HasChanged() bool {

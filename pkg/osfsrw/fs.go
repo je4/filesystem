@@ -58,7 +58,12 @@ func (d *osFSRW) Stat(name string) (fs.FileInfo, error) {
 }
 
 func (d *osFSRW) Create(path string) (writefs.FileWrite, error) {
-	w, err := os.Create(filepath.Join(d.dir, path))
+	fullpath := filepath.Join(d.dir, path)
+	dir := filepath.Dir(fullpath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return nil, errors.WithStack(err)
+	}
+	w, err := os.Create(fullpath)
 	return w, errors.WithStack(err)
 }
 

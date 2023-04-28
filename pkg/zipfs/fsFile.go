@@ -26,7 +26,7 @@ func NewFSFile(baseFS fs.FS, path string) (*fsFile, error) {
 	if !ok {
 		return nil, errors.Errorf("cannot cast reader of file '%s' to io.ReaderAt", path)
 	}
-	zfs, err := NewFS(fpAt, stat.Size())
+	zfs, err := NewFS(fpAt, stat.Size(), fmt.Sprintf("fsFile(%v/%s)", baseFS, path))
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open zipfs for file '%s'", path)
 	}
@@ -46,13 +46,13 @@ func (f *fsFile) Close() error {
 }
 
 var (
-	_ fs.FS              = (*fsFile)(nil)
-	_ writefs.CloseFS    = (*fsFile)(nil)
-	_ fs.ReadDirFS       = (*zipFS)(nil)
-	_ fs.ReadFileFS      = (*zipFS)(nil)
-	_ fs.StatFS          = (*zipFS)(nil)
-	_ fs.SubFS           = (*zipFS)(nil)
-	_ writefs.IsLockedFS = (*zipFS)(nil)
-	_ OpenRawZipFS       = (*zipFS)(nil)
-	_ fmt.Stringer       = (*zipFS)(nil)
+	_ fs.FS           = (*fsFile)(nil)
+	_ writefs.CloseFS = (*fsFile)(nil)
+	_ fs.ReadDirFS    = (*fsFile)(nil)
+	_ fs.ReadFileFS   = (*fsFile)(nil)
+	_ fs.StatFS       = (*fsFile)(nil)
+	//_ fs.SubFS           = (*fsFile)(nil)
+	_ writefs.IsLockedFS = (*fsFile)(nil)
+	_ OpenRawZipFS       = (*fsFile)(nil)
+	_ fmt.Stringer       = (*fsFile)(nil)
 )

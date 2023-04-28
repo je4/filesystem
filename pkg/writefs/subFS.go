@@ -2,13 +2,18 @@ package writefs
 
 import (
 	"errors"
+	"fmt"
 	"io/fs"
 	"path/filepath"
 )
 
 type subFS struct {
-	fsys ReadWriteFS
+	fsys fs.FS
 	dir  string
+}
+
+func (sfs *subFS) String() string {
+	return fmt.Sprintf("subFS(%v/%s)", sfs.fsys, sfs.dir)
 }
 
 func (sfs *subFS) Rename(oldPath, newPath string) error {
@@ -23,7 +28,7 @@ func (sfs *subFS) Remove(path string) error {
 	return Remove(sfs.fsys, filepath.ToSlash(filepath.Join(sfs.dir, path)))
 }
 
-func NewSubFS(fsys ReadWriteFS, dir string) *subFS {
+func NewSubFS(fsys fs.FS, dir string) *subFS {
 	return &subFS{
 		fsys: fsys,
 		dir:  dir,
@@ -51,7 +56,7 @@ func (sfs *subFS) Sub(dir string) (fs.FS, error) {
 }
 
 func (sfs *subFS) Create(path string) (FileWrite, error) {
-	return sfs.fsys.Create(filepath.ToSlash(filepath.Join(sfs.dir, path)))
+	return Create(sfs.fsys, filepath.ToSlash(filepath.Join(sfs.dir, path)))
 }
 
 func (sfs *subFS) MkDir(path string) error {
@@ -72,4 +77,5 @@ var (
 	_ fs.ReadFileFS = &subFS{}
 	_ fs.StatFS     = &subFS{}
 	_ fs.SubFS      = &subFS{}
+	_ fmt.Stringer  = &subFS{}
 )

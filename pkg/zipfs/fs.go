@@ -19,7 +19,7 @@ type OpenRawZipFS interface {
 
 // NewFS creates a new fs.FS from a readerAt and size
 // it implements fs.FS, fs.ReadDirFS, fs.ReadFileFS, fs.StatFS, fs.SubFS, basefs.IsLockedFS
-func NewFS(r io.ReaderAt, size int64) (fs *zipFS, err error) {
+func NewFS(r io.ReaderAt, size int64, name string) (fs *zipFS, err error) {
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
 		return nil, err
@@ -27,25 +27,34 @@ func NewFS(r io.ReaderAt, size int64) (fs *zipFS, err error) {
 	return &zipFS{
 		Reader: zipReader,
 		mutex:  writefs.NewMutex(),
+		name:   name,
 	}, nil
 }
 
 type zipFS struct {
 	*zip.Reader
 	mutex *writefs.Mutex
+	name  string
+}
+
+func (zfs *zipFS) Sub(dir string) (fs.FS, error) {
+	return writefs.NewSubFS(zfs, dir), nil
 }
 
 func (zfs *zipFS) String() string {
-	return fmt.Sprintf("zipFS(%d files)", len(zfs.File))
+	return fmt.Sprintf("zipFS(%s)", zfs.name)
 }
 
 func (zfs *zipFS) GetZipReader() *zip.Reader {
 	return zfs.Reader
 }
 
+/*
 func (zfs *zipFS) Sub(dir string) (fs.FS, error) {
 	return fs.Sub(zfs, dir)
 }
+
+*/
 
 func (zfs *zipFS) Stat(name string) (fs.FileInfo, error) {
 	name = clearPath(name)
@@ -98,6 +107,7 @@ func (zfs *zipFS) ReadDir(name string) ([]fs.DirEntry, error) {
 }
 
 func (zfs *zipFS) Open(name string) (fs.File, error) {
+	name = clearPath(name)
 	for _, f := range zfs.File {
 		if f.Name == name {
 			w, err := f.Open()
