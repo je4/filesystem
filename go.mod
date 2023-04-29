@@ -5,7 +5,8 @@ go 1.20
 require (
 	emperror.dev/errors v0.8.1
 	github.com/bluele/gcache v0.0.2
-	github.com/je4/utils/v2 v2.0.7
+	github.com/google/tink/go v1.7.0
+	github.com/je4/utils/v2 v2.0.8-0.20230429085248-7c25d073caf9
 	github.com/minio/madmin-go/v2 v2.0.20
 	github.com/minio/minio v0.0.0-20230421205608-477230c82e3c
 	github.com/minio/minio-go/v7 v7.0.52
