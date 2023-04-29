@@ -72,6 +72,9 @@ func (d *osFSRW) MkDir(path string) error {
 
 func (d *osFSRW) ReadDir(name string) ([]fs.DirEntry, error) {
 	de, err := os.ReadDir(filepath.Join(d.dir, name))
+	if err != nil && os.IsNotExist(err) {
+		return nil, fs.ErrNotExist
+	}
 	return de, errors.WithStack(err)
 }
 
