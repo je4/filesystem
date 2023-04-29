@@ -6,9 +6,26 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func NewFS(dir string) (*osFSRW, error) {
+	var err error
+	if dir == "" || dir == "." {
+		dir, err = os.Getwd()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot get current working directory")
+		}
+	}
+	dir = filepath.ToSlash(dir)
+	if strings.HasPrefix(dir, "./") {
+		currentDir, err := os.Getwd()
+		if err != nil {
+			return nil, errors.Wrap(err, "cannot get current working directory")
+		}
+		dir = filepath.Join(currentDir, dir[2:])
+	}
+	dir = filepath.ToSlash(filepath.Clean(dir))
 	// we have only a problem, if dir exists, but is not a folder
 	if stat, err := os.Stat(dir); err == nil {
 		if !stat.IsDir() {
