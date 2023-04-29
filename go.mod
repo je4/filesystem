@@ -6,13 +6,13 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/bluele/gcache v0.0.2
 	github.com/google/tink/go v1.7.0
-	github.com/je4/utils/v2 v2.0.8-0.20230429085248-7c25d073caf9
+	github.com/je4/utils/v2 v2.0.8-0.20230429090351-3cef63b41e76
 	github.com/minio/madmin-go/v2 v2.0.20
 	github.com/minio/minio v0.0.0-20230421205608-477230c82e3c
 	github.com/minio/minio-go/v7 v7.0.52
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 )
 
 require (
@@ -76,7 +76,7 @@ require (
 	github.com/go-openapi/strfmt v0.21.7 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-openapi/validate v0.22.1 // indirect
-	github.com/go-sql-driver/mysql v1.7.0 // indirect
+	github.com/go-sql-driver/mysql v1.7.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
@@ -110,7 +110,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/ratelimit v1.0.2 // indirect
-	github.com/klauspost/compress v1.16.4 // indirect
+	github.com/klauspost/compress v1.16.5 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
 	github.com/klauspost/filepathx v1.1.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -192,7 +192,7 @@ require (
 	github.com/rjeczalik/notify v0.9.3 // indirect
 	github.com/rs/cors v1.8.3 // indirect
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
-	github.com/rs/xid v1.4.0 // indirect
+	github.com/rs/xid v1.5.0 // indirect
 	github.com/secure-io/sio-go v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.3 // indirect
 	github.com/shoenig/go-m1cpu v0.1.5 // indirect
