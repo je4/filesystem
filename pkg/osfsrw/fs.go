@@ -9,12 +9,11 @@ import (
 )
 
 func NewFS(dir string) (*osFSRW, error) {
-	stat, err := os.Stat(dir)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-	if !stat.IsDir() {
-		return nil, errors.Errorf("not a directory: %s", dir)
+	// we have only a problem, if dir exists, but is not a folder
+	if stat, err := os.Stat(dir); err == nil {
+		if !stat.IsDir() {
+			return nil, errors.Errorf("not a directory: %s", dir)
+		}
 	}
 	return &osFSRW{
 		dir: dir,
