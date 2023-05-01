@@ -5,7 +5,7 @@ import (
 	"io/fs"
 )
 
-var ErrNotImplemented = errors.New("not implemented")
+var ErrNotImplemented = errors.NewPlain("not implemented")
 
 func MkDir(fsys fs.FS, path string) error {
 	if _fsys, ok := fsys.(MkDirFS); ok {
