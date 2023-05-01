@@ -5,6 +5,8 @@ import (
 	"io/fs"
 )
 
+var ErrNotImplemented = errors.New("not implemented")
+
 func MkDir(fsys fs.FS, path string) error {
 	if _fsys, ok := fsys.(MkDirFS); ok {
 		return _fsys.MkDir(path)
@@ -16,21 +18,21 @@ func Rename(fsys fs.FS, oldPath, newPath string) error {
 	if _fsys, ok := fsys.(RenameFS); ok {
 		return _fsys.Rename(oldPath, newPath)
 	}
-	return errors.Wrapf(fs.ErrInvalid, "fs does not support Rename")
+	return errors.Wrap(ErrNotImplemented, "Rename")
 }
 
 func Create(fsys fs.FS, path string) (FileWrite, error) {
 	if _fsys, ok := fsys.(CreateFS); ok {
 		return _fsys.Create(path)
 	}
-	return nil, errors.Wrapf(fs.ErrInvalid, "fs does not support Create")
+	return nil, errors.Wrap(ErrNotImplemented, "Create")
 }
 
 func Remove(fsys fs.FS, path string) error {
 	if _fsys, ok := fsys.(RemoveFS); ok {
 		return _fsys.Remove(path)
 	}
-	return errors.Wrapf(fs.ErrInvalid, "fs does not support Remove")
+	return errors.Wrap(ErrNotImplemented, "Remove")
 }
 
 func Close(fsys fs.FS) error {
@@ -38,6 +40,13 @@ func Close(fsys fs.FS) error {
 		return _fsys.Close()
 	}
 	return nil
+}
+
+func Fullpath(fsys fs.FS, name string) (string, error) {
+	if _fsys, ok := fsys.(FullpathFS); ok {
+		return _fsys.Fullpath(name)
+	}
+	return "", errors.Wrap(ErrNotImplemented, "Fullpath")
 }
 
 func WriteFile(fsys fs.FS, name string, data []byte) error {
