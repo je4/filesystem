@@ -12,6 +12,10 @@ type subFS struct {
 	dir  string
 }
 
+func (sfs *subFS) Fullpath(name string) (string, error) {
+	return Fullpath(sfs.fsys, filepath.ToSlash(filepath.Join(sfs.dir, name)))
+}
+
 func (sfs *subFS) String() string {
 	return fmt.Sprintf("subFS(%v/%s)", sfs.fsys, sfs.dir)
 }
@@ -73,6 +77,7 @@ var (
 	_ MkDirFS       = &subFS{}
 	_ RenameFS      = &subFS{}
 	_ RemoveFS      = &subFS{}
+	_ FullpathFS    = &subFS{}
 	_ fs.ReadDirFS  = &subFS{}
 	_ fs.ReadFileFS = &subFS{}
 	_ fs.StatFS     = &subFS{}

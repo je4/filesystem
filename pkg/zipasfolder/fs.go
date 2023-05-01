@@ -71,6 +71,10 @@ type zipAsfolderFS struct {
 	end      chan bool
 }
 
+func (fsys *zipAsfolderFS) Fullpath(name string) (string, error) {
+	return writefs.Fullpath(fsys.baseFS, name)
+}
+
 func (fsys *zipAsfolderFS) String() string {
 	return fmt.Sprintf("zipAsFolder:%v", fsys.baseFS)
 }
@@ -252,8 +256,9 @@ func expandZipFile(name string) (zipFile string, zipPath string, isZip bool) {
 var (
 	_ writefs.ReadWriteFS = (*zipAsfolderFS)(nil)
 	_ writefs.MkDirFS     = (*zipAsfolderFS)(nil)
+	_ writefs.CloseFS     = (*zipAsfolderFS)(nil)
+	_ writefs.FullpathFS  = (*zipAsfolderFS)(nil)
 	_ fs.ReadDirFS        = (*zipAsfolderFS)(nil)
 	_ fs.ReadFileFS       = (*zipAsfolderFS)(nil)
-	_ writefs.CloseFS     = (*zipAsfolderFS)(nil)
 	_ fmt.Stringer        = (*zipAsfolderFS)(nil)
 )

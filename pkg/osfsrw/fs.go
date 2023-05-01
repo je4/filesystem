@@ -41,6 +41,10 @@ type osFSRW struct {
 	dir string
 }
 
+func (d *osFSRW) Fullpath(name string) (string, error) {
+	return filepath.ToSlash(filepath.Join(d.dir, name)), nil
+}
+
 func (d *osFSRW) String() string {
 	return "osFSRW(" + d.dir + ")"
 }
@@ -106,6 +110,7 @@ var (
 	_ writefs.MkDirFS     = &osFSRW{}
 	_ writefs.RenameFS    = &osFSRW{}
 	_ writefs.RemoveFS    = &osFSRW{}
+	_ writefs.FullpathFS  = &osFSRW{}
 	_ fs.ReadDirFS        = &osFSRW{}
 	_ fs.ReadFileFS       = &osFSRW{}
 	_ fs.StatFS           = &osFSRW{}

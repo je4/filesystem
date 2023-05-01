@@ -23,3 +23,7 @@ type CloseFS interface {
 type WriteFileFS interface {
 	WriteFile(name string, data []byte) error
 }
+
+type FullpathFS interface {
+	Fullpath(name string) (string, error)
+}
