@@ -7,7 +7,7 @@ import (
 	"io/fs"
 )
 
-func NewZipFSCloser(zipFile fs.File) (fs.FS, error) {
+func NewZipFSCloser(zipFile fs.File, filename string) (fs.FS, error) {
 	readerAt, ok := zipFile.(io.ReaderAt)
 	if !ok {
 		return nil, errors.New("zipFile does not implement io.ReaderAt")
@@ -16,7 +16,7 @@ func NewZipFSCloser(zipFile fs.File) (fs.FS, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot stat zip file")
 	}
-	zfs, err := zipfs.NewFS(readerAt, zstat.Size())
+	zfs, err := zipfs.NewFS(readerAt, zstat.Size(), filename)
 	return &zipFSCloser{
 		FS:      zfs,
 		zipFile: zipFile,

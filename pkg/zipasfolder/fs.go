@@ -29,7 +29,7 @@ func NewFS(baseFS fs.FS, cacheSize int) (fs.FS, error) {
 				if err != nil {
 					return nil, errors.Wrapf(err, "cannot open zip file '%s'", zipFilename)
 				}
-				zipFS, err := NewZipFSCloser(zipFile)
+				zipFS, err := NewZipFSCloser(zipFile, zipFilename)
 				return zipFS, nil
 			}).
 			EvictedFunc(func(key, value any) {
