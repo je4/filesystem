@@ -91,7 +91,9 @@ func (zfs *zipFS) ReadDir(name string) ([]fs.DirEntry, error) {
 		if strings.HasPrefix(f.Name, name) {
 			parts := strings.Split(strings.Trim(f.Name[len(name):], "/"), "/")
 			if len(parts) == 1 {
-				result = append(result, writefs.NewDirEntry(f.FileInfo()))
+				if parts[0] != "" {
+					result = append(result, writefs.NewDirEntry(f.FileInfo()))
+				}
 				continue
 			}
 			result = append(result, writefs.NewDirEntry(writefs.NewFileInfoDir(parts[0])))
