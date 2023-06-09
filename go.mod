@@ -9,10 +9,12 @@ require (
 	github.com/je4/utils/v2 v2.0.8-0.20230429090351-3cef63b41e76
 	github.com/minio/madmin-go/v2 v2.0.20
 	github.com/minio/minio v0.0.0-20230421205608-477230c82e3c
-	github.com/minio/minio-go/v7 v7.0.52
+	github.com/minio/minio-go/v7 v7.0.56
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
-	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
+	github.com/pkg/sftp v1.13.5
+	golang.org/x/crypto v0.9.0
+	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1
 )
 
 require (
@@ -111,7 +113,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/ratelimit v1.0.2 // indirect
 	github.com/klauspost/compress v1.16.5 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.4 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/klauspost/filepathx v1.1.1 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/klauspost/readahead v1.4.0 // indirect
@@ -148,7 +150,7 @@ require (
 	github.com/minio/mux v1.9.0 // indirect
 	github.com/minio/pkg v1.6.6-0.20230330040824-5db111e5f63c // indirect
 	github.com/minio/selfupdate v0.6.0 // indirect
-	github.com/minio/sha256-simd v1.0.0 // indirect
+	github.com/minio/sha256-simd v1.0.1 // indirect
 	github.com/minio/simdjson-go v0.4.5 // indirect
 	github.com/minio/sio v0.3.1 // indirect
 	github.com/minio/websocket v1.6.0 // indirect
@@ -175,7 +177,6 @@ require (
 	github.com/philhofer/fwd v1.1.2 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
-	github.com/pkg/sftp v1.13.5 // indirect
 	github.com/pkg/xattr v0.4.9 // indirect
 	github.com/posener/complete v1.2.3 // indirect
 	github.com/power-devops/perfstat v0.0.0-20221212215047-62379fc7944b // indirect
@@ -196,7 +197,7 @@ require (
 	github.com/secure-io/sio-go v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.3 // indirect
 	github.com/shoenig/go-m1cpu v0.1.5 // indirect
-	github.com/sirupsen/logrus v1.9.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -219,13 +220,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
 	goftp.io/server/v2 v2.0.0 // indirect
-	golang.org/x/crypto v0.8.0 // indirect
 	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/sys v0.7.0 // indirect
-	golang.org/x/term v0.7.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.8.0 // indirect

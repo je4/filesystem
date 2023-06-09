@@ -39,7 +39,7 @@ func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger *l
 		}
 		subPath, _ := result["relativeid"]
 
-		s3fs, err := NewS3FS(
+		s3fs, err := NewFS(
 			acc.URL,
 			acc.AccessKey,
 			acc.SecretKey,

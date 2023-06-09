@@ -15,7 +15,7 @@ import (
 	"net/http"
 )
 
-func NewS3FS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, logger *logging.Logger) (*s3FSRW, error) {
+func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, logger *logging.Logger) (*s3FSRW, error) {
 	var err error
 	fs := &s3FSRW{
 		client: nil,

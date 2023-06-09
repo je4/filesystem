@@ -15,7 +15,7 @@ import (
 
 // NewFS creates a new zipAsfolderFS which handles zipfiles like folders which are read-only
 // it implements readwritefs.ReadWriteFS, fs.ReadDirFS, fs.ReadFileFS, basefs.CloserFS
-func NewFS(baseFS fs.FS, cacheSize int) (fs.FS, error) {
+func NewFS(baseFS fs.FS, cacheSize int) (*zipAsfolderFS, error) {
 	f := &zipAsfolderFS{
 		baseFS: baseFS,
 		zipCache: gcache.New(cacheSize).
@@ -211,12 +211,16 @@ func (fsys *zipAsfolderFS) Open(name string) (fs.File, error) {
 	return rc, nil
 }
 
-// Close closes the filesystem
+// Close closes the filesystem and underlying fs if possible
 func (fsys *zipAsfolderFS) Close() error {
 	fsys.lock.Lock()
 	defer fsys.lock.Unlock()
 	fsys.end <- true
 	fsys.zipCache.Purge()
+
+	if closer, ok := fsys.baseFS.(io.Closer); ok {
+		closer.Close()
+	}
 	return nil
 }
 

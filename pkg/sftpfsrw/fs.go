@@ -1,4 +1,4 @@
-package sftpfs
+package sftpfsrw
 
 import (
 	"emperror.dev/errors"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func NewSFTPFSRW(addr string, config *ssh.ClientConfig, baseDir string, numSessions uint) (*sftpFSRW, error) {
+func NewFS(addr string, config *ssh.ClientConfig, baseDir string, numSessions uint) (*sftpFSRW, error) {
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot connect to '%s'", addr)
