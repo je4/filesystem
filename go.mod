@@ -6,7 +6,7 @@ require (
 	emperror.dev/errors v0.8.1
 	github.com/bluele/gcache v0.0.2
 	github.com/google/tink/go v1.7.0
-	github.com/je4/utils/v2 v2.0.8-0.20230429090351-3cef63b41e76
+	github.com/je4/utils/v2 aed149c118d25fda42ce9f5f8cf381983fb6e5ef
 	github.com/minio/madmin-go/v2 v2.0.20
 	github.com/minio/minio v0.0.0-20230421205608-477230c82e3c
 	github.com/minio/minio-go/v7 v7.0.56
