@@ -129,6 +129,7 @@ func TestS3FS(t *testing.T) {
 	t.Run("create & read", func(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			testx := fmt.Sprintf("test%d", i)
+			//err := writefs.WriteFile(s3fs, "test/"+testx+".txt", []byte(testx))
 			fp, err := writefs.Create(s3fs, "test/"+testx+".txt")
 			if err != nil {
 				t.Fatal(err)

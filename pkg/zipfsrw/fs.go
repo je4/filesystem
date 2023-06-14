@@ -123,20 +123,11 @@ func (zfsrw *zipFSRW) Sub(name string) (fs.FS, error) {
 }
 
 var (
-	_ writefs.ReadWriteFS = &zipFSRW{}
-	_ writefs.CloseFS     = &zipFSRW{}
-	_ fmt.Stringer        = &zipFSRW{}
-	_ fs.ReadDirFS        = &zipFSRW{}
-	_ fs.FS               = &zipFSRW{}
-	_ fs.SubFS            = &zipFSRW{}
-	_ fs.StatFS           = &zipFSRW{}
-)
-var (
-	_ writefs.ReadWriteFS = &fsFile{}
-	_ writefs.CloseFS     = &fsFile{}
-	_ fmt.Stringer        = &fsFile{}
 	_ fs.ReadDirFS        = &fsFile{}
 	_ fs.FS               = &fsFile{}
 	_ fs.SubFS            = &fsFile{}
 	_ fs.StatFS           = &fsFile{}
+	_ writefs.ReadWriteFS = &fsFile{}
+	_ writefs.CloseFS     = &fsFile{}
+	_ fmt.Stringer        = &fsFile{}
 )
