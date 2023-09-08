@@ -99,8 +99,8 @@ func (zfs *zipFS) ReadDir(name string) ([]fs.DirEntry, error) {
 			result = append(result, writefs.NewDirEntry(writefs.NewFileInfoDir(parts[0])))
 		}
 	}
-	slices.SortFunc(result, func(i, j fs.DirEntry) bool {
-		return i.Name() < j.Name()
+	slices.SortFunc(result, func(i, j fs.DirEntry) int {
+		return strings.Compare(i.Name(), j.Name())
 	})
 	return slices.CompactFunc(result, func(i, j fs.DirEntry) bool {
 		return i.Name() == j.Name()
