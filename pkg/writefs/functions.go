@@ -7,6 +7,15 @@ import (
 
 var ErrNotImplemented = errors.NewPlain("not implemented")
 
+func SubFSCreate(fsys fs.FS, path string) (fs.FS, error) {
+	if err := MkDir(fsys, path); err != nil {
+		if !errors.Is(err, fs.ErrExist) {
+			return nil, errors.Wrapf(err, "cannot create directory '%s'", path)
+		}
+	}
+	return fs.Sub(fsys, path)
+}
+
 func MkDir(fsys fs.FS, path string) error {
 	if _fsys, ok := fsys.(MkDirFS); ok {
 		return _fsys.MkDir(path)
