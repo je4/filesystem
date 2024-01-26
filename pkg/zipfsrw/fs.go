@@ -122,6 +122,10 @@ func (zfsrw *zipFSRW) Sub(name string) (fs.FS, error) {
 	return writefs.NewSubFS(zfsrw, name), nil
 }
 
+func (zfsrw *zipFSRW) MkDir(string) error {
+	return nil
+}
+
 var (
 	_ fs.ReadDirFS        = &fsFile{}
 	_ fs.FS               = &fsFile{}
