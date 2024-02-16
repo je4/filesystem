@@ -15,7 +15,7 @@ type S3Access struct {
 	UseSSL    bool
 }
 
-var ARNRegexStr = `^arn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):[^:]*`
+var ARNRegexStr = `^arn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):(?P<subpath>[^:]*)`
 
 func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger *logging.Logger) writefs.CreateFSFunc {
 	urnRegexp := regexp.MustCompile(regexpString)
@@ -37,7 +37,7 @@ func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger *l
 		if namespace, ok := result["namespace"]; ok && namespace != "" {
 			return nil, fmt.Errorf("namespace %s not supported", namespace)
 		}
-		subPath, _ := result["relativeid"]
+		subPath, _ := result["subpath"]
 
 		s3fs, err := NewFS(
 			acc.URL,
