@@ -4,13 +4,12 @@ import (
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
-	"github.com/op/go-logging"
 	"io"
 	"io/fs"
 	"strings"
 )
 
-func NewFS(config Config, logger *logging.Logger) (*vFSRW, error) {
+func NewFS(config Config, logger zLogger.ZWrapper) (*vFSRW, error) {
 	var toClose = []io.Closer{}
 	var closeAll = func() {
 		// iterate in reverse order

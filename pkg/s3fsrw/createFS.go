@@ -3,7 +3,7 @@ package s3fsrw
 import (
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
-	"github.com/op/go-logging"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io/fs"
 	"regexp"
 )
@@ -17,7 +17,7 @@ type S3Access struct {
 
 var ARNRegexStr = `^arn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):(?P<subpath>[^:]*)`
 
-func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger *logging.Logger) writefs.CreateFSFunc {
+func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger zLogger.ZWrapper) writefs.CreateFSFunc {
 	urnRegexp := regexp.MustCompile(regexpString)
 
 	return func(f *writefs.Factory, path string) (fs.FS, error) {

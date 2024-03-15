@@ -6,16 +6,16 @@ import (
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
-	"github.com/op/go-logging"
 	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
 	"net/http"
 )
 
-func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, logger *logging.Logger) (*s3FSRW, error) {
+func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, logger zLogger.ZWrapper) (*s3FSRW, error) {
 	var err error
 	fs := &s3FSRW{
 		client: nil,
@@ -50,7 +50,7 @@ type s3FSRW struct {
 	client   *minio.Client
 	region   string
 	endpoint string
-	logger   *logging.Logger
+	logger   zLogger.ZWrapper
 }
 
 // MkDir does nothing

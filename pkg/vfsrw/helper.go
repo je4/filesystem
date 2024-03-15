@@ -6,7 +6,6 @@ import (
 	"github.com/je4/filesystem/v2/pkg/s3fsrw"
 	"github.com/je4/filesystem/v2/pkg/sftpfsrw"
 	"github.com/je4/filesystem/v2/pkg/zipasfolder"
-	"github.com/op/go-logging"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 	"io/fs"
@@ -85,7 +84,7 @@ func newSFTP(cfg *SFTP) (fs.FS, error) {
 	return zFS, nil
 }
 
-func newS3(cfg *S3, logger *logging.Logger) (fs.FS, error) {
+func newS3(cfg *S3, logger zLogger.ZWrapper) (fs.FS, error) {
 	rFS, err := s3fsrw.NewFS(string(cfg.Endpoint), string(cfg.AccessKeyID), string(cfg.SecretAccessKey), string(cfg.Region), cfg.UseSSL, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create s3fsrw")

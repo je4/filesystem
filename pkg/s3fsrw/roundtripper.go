@@ -2,7 +2,7 @@ package s3fsrw
 
 import (
 	"fmt"
-	"github.com/op/go-logging"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"net/http"
 	"time"
 )
@@ -85,7 +85,7 @@ func (r *requestInfo) toCurl() string {
 // through it based on what is configured
 type debuggingRoundTripper struct {
 	delegatedRoundTripper http.RoundTripper
-	logger                *logging.Logger
+	logger                zLogger.ZWrapper
 	levels                map[debugLevel]bool
 }
 
@@ -100,7 +100,7 @@ const (
 	ResponseHeaders
 )
 
-func NewDebuggingRoundTripper(rt http.RoundTripper, logger *logging.Logger, levels ...debugLevel) *debuggingRoundTripper {
+func NewDebuggingRoundTripper(rt http.RoundTripper, logger zLogger.ZWrapper, levels ...debugLevel) *debuggingRoundTripper {
 	drt := &debuggingRoundTripper{
 		delegatedRoundTripper: rt,
 		logger:                logger,
