@@ -1,6 +1,7 @@
 package s3fsrw
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/zLogger"
@@ -17,7 +18,7 @@ type S3Access struct {
 
 var ARNRegexStr = `^arn:(?P<partition>[^:]*):s3:(?P<region>[^:]*):(?P<namespace>[^:]*):(?P<subpath>[^:]*)`
 
-func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger zLogger.ZWrapper) writefs.CreateFSFunc {
+func NewCreateFSFunc(access map[string]*S3Access, regexpString string, debug bool, tlsConfig *tls.Config, logger zLogger.ZWrapper) writefs.CreateFSFunc {
 	urnRegexp := regexp.MustCompile(regexpString)
 
 	return func(f *writefs.Factory, path string) (fs.FS, error) {
@@ -45,6 +46,8 @@ func NewCreateFSFunc(access map[string]*S3Access, regexpString string, logger zL
 			acc.SecretKey,
 			region,
 			acc.UseSSL,
+			debug,
+			tlsConfig,
 			logger,
 		)
 		if err != nil {

@@ -1,11 +1,13 @@
 package vfsrw
 
 import (
+	"crypto/tls"
 	"emperror.dev/errors"
 	"github.com/je4/filesystem/v2/pkg/osfsrw"
 	"github.com/je4/filesystem/v2/pkg/s3fsrw"
 	"github.com/je4/filesystem/v2/pkg/sftpfsrw"
 	"github.com/je4/filesystem/v2/pkg/zipasfolder"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 	"io/fs"
@@ -85,7 +87,17 @@ func newSFTP(cfg *SFTP) (fs.FS, error) {
 }
 
 func newS3(cfg *S3, logger zLogger.ZWrapper) (fs.FS, error) {
-	rFS, err := s3fsrw.NewFS(string(cfg.Endpoint), string(cfg.AccessKeyID), string(cfg.SecretAccessKey), string(cfg.Region), cfg.UseSSL, logger)
+	var tlsConfig *tls.Config
+	switch cfg.CAPEM {
+	case "ignore":
+		tlsConfig = &tls.Config{InsecureSkipVerify: true}
+	case "":
+		// no tls
+	default:
+		//todo: create ca cert from PEM
+	}
+
+	rFS, err := s3fsrw.NewFS(string(cfg.Endpoint), string(cfg.AccessKeyID), string(cfg.SecretAccessKey), string(cfg.Region), cfg.UseSSL, cfg.Debug, tlsConfig, logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create s3fsrw")
 	}

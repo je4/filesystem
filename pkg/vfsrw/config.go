@@ -24,6 +24,8 @@ type S3 struct {
 	Endpoint         config.EnvString
 	Region           config.EnvString
 	UseSSL           bool
+	Debug            bool
+	CAPEM            string
 	BaseUrl          string
 	ZipAsFolderCache uint
 }

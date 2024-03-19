@@ -3,6 +3,7 @@ package s3fsrw
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v2/pkg/writefs"
@@ -15,7 +16,7 @@ import (
 	"net/http"
 )
 
-func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, logger zLogger.ZWrapper) (*s3FSRW, error) {
+func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL, debug bool, tlsConfig *tls.Config, logger zLogger.ZWrapper) (*s3FSRW, error) {
 	var err error
 	fs := &s3FSRW{
 		client: nil,
@@ -25,12 +26,12 @@ func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, l
 		logger:   logger,
 	}
 
-	fs.client, err = minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
-		Region: region,
-		/* Transport: NewDebuggingRoundTripper(
-			&http.Transport{},
+	var tr http.RoundTripper = &http.Transport{TLSClientConfig: tlsConfig}
+	if debug {
+		tr = NewDebuggingRoundTripper(
+			&http.Transport{
+				TLSClientConfig: tlsConfig,
+			},
 			logger,
 			JustURL,
 			URLTiming,
@@ -38,7 +39,13 @@ func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL bool, l
 			RequestHeaders,
 			ResponseStatus,
 			// ResponseHeaders,
-		) ,*/
+		)
+	}
+	fs.client, err = minio.New(endpoint, &minio.Options{
+		Creds:     credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+		Secure:    useSSL,
+		Region:    region,
+		Transport: tr,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create s3 client instance")

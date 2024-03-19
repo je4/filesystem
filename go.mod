@@ -10,7 +10,6 @@ require (
 	github.com/minio/madmin-go/v2 v2.0.20
 	github.com/minio/minio v0.0.0-20230421205608-477230c82e3c
 	github.com/minio/minio-go/v7 v7.0.69
-	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pkg/errors v0.9.1
 	github.com/pkg/sftp v1.13.6
 	golang.org/x/crypto v0.21.0
@@ -194,10 +193,10 @@ require (
 	github.com/rs/cors v1.8.3 // indirect
 	github.com/rs/dnscache v0.0.0-20211102005908-e0241e321417 // indirect
 	github.com/rs/xid v1.5.0 // indirect
+	github.com/rs/zerolog v1.30.0 // indirect
 	github.com/secure-io/sio-go v0.3.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.23.3 // indirect
 	github.com/shoenig/go-m1cpu v0.1.5 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
