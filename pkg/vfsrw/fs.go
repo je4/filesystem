@@ -76,6 +76,19 @@ type vFSRW struct {
 	fss map[string]fs.FS
 }
 
+func (vfs *vFSRW) Close() error {
+	var errs = []error{}
+	for _, fs := range vfs.fss {
+		if closer, ok := fs.(io.Closer); ok {
+			err := closer.Close()
+			if err != nil {
+				errs = append(errs, errors.WithStack(err))
+			}
+		}
+	}
+	return errors.Combine(errs...)
+}
+
 func (vfs *vFSRW) Remove(name string) error {
 	vFS, path, err := vfs.getFS(name)
 	if err != nil {

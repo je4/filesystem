@@ -2,6 +2,7 @@ package vfsrw
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"emperror.dev/errors"
 	"github.com/je4/filesystem/v2/pkg/osfsrw"
 	"github.com/je4/filesystem/v2/pkg/s3fsrw"
@@ -94,7 +95,10 @@ func newS3(cfg *S3, logger zLogger.ZWrapper) (fs.FS, error) {
 	case "":
 		// no tls
 	default:
-		//todo: create ca cert from PEM
+		tlsConfig = &tls.Config{RootCAs: x509.NewCertPool()}
+		if ok := tlsConfig.RootCAs.AppendCertsFromPEM([]byte(cfg.CAPEM)); !ok {
+			return nil, errors.New("cannot add root ca to CertPool")
+		}
 	}
 
 	rFS, err := s3fsrw.NewFS(string(cfg.Endpoint), string(cfg.AccessKeyID), string(cfg.SecretAccessKey), string(cfg.Region), cfg.UseSSL, cfg.Debug, tlsConfig, logger)
