@@ -31,11 +31,11 @@ type S3 struct {
 }
 
 type VFS struct {
-	Name string
-	Type string
-	S3   *S3   `toml:"s3,omitempty"`
-	OS   *OS   `toml:"os,omitempty"`
-	SFTP *SFTP `toml:"sftp,omitempty"`
+	Name string `toml:"name"`
+	Type string `toml:"type"`
+	S3   *S3    `toml:"s3,omitempty"`
+	OS   *OS    `toml:"os,omitempty"`
+	SFTP *SFTP  `toml:"sftp,omitempty"`
 }
 
 type Config map[string]*VFS
