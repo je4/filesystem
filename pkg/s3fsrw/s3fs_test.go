@@ -119,6 +119,8 @@ func TestS3FS(t *testing.T) {
 				},
 			},
 			ARNRegexStr,
+			false,
+			nil,
 			nil,
 		), ARNRegexStr, writefs.MediumFS)
 
