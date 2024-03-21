@@ -91,9 +91,7 @@ func (s3FS *s3FSRW) Open(path string) (fs.File, error) {
 		object.Close()
 		return nil, errors.Wrapf(objectInfo.Err, "error in objectInfo of '%s'", path)
 	}
-	return &File{
-		object,
-	}, nil
+	return NewFile(object, path, s3FS.logger), nil
 }
 
 func (s3FS *s3FSRW) ReadFile(path string) ([]byte, error) {
@@ -147,10 +145,10 @@ func (s3FS *s3FSRW) Create(path string) (writefs.FileWrite, error) {
 		s3FS.logger.Debugf("%s - Create(%s)", s3FS.String(), path)
 	}
 	ctx := context.Background()
-	wc := NewWriteCloser()
+	wc := NewWriteCloser(path, s3FS.logger)
 	go func() {
 		ui, err := s3FS.client.PutObject(ctx, bucket, bucketPath, wc.GetReader(), -1, minio.PutObjectOptions{})
-		uierr := NewUploadInfo(ui, err)
+		uierr := NewUploadInfo(&ui, err)
 		wc.c <- uierr
 		if err != nil {
 			wc.Close()

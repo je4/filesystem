@@ -2,12 +2,28 @@ package s3fsrw
 
 import (
 	"emperror.dev/errors"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/minio/minio-go/v7"
 	"io/fs"
 )
 
+func NewFile(o *minio.Object, debugInfo string, logger zLogger.ZWrapper) *File {
+	return &File{
+		Object:    o,
+		logger:    logger,
+		debugInfo: debugInfo,
+	}
+}
+
 type File struct {
 	*minio.Object
+	logger    zLogger.ZWrapper
+	debugInfo string
+}
+
+func (s3f *File) Close() error {
+	s3f.logger.Debugf("closing s3 file: %s", s3f.debugInfo)
+	return errors.WithStack(s3f.Object.Close())
 }
 
 func (s3f *File) Stat() (fs.FileInfo, error) {
