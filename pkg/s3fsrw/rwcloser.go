@@ -64,13 +64,9 @@ func (wc *rwCloser) Close() error {
 		wc.isClosed.Swap(true)
 		wc.errs = append(wc.errs, wc.PipeWriter.Close())
 		if wc.uploadInfo == nil {
-			select {
-			case wc.uploadInfo = <-wc.c:
-				wc.errs = append(wc.errs, wc.uploadInfo.err)
-			default:
-				wc.errs = append(wc.errs, errors.New("no upload info available"))
-			}
+			wc.uploadInfo = <-wc.c
 		}
+		wc.errs = append(wc.errs, wc.uploadInfo.err)
 	}
 	wc.logger.Debugf("close s3 pipe: %s", wc.debugInfo)
 	return errors.Combine(wc.errs...)
