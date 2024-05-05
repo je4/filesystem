@@ -83,10 +83,10 @@ func (d *osFSRW) Create(path string) (writefs.FileWrite, error) {
 	fullpath := filepath.Join(d.dir, path)
 	dir := filepath.Dir(fullpath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, errors.Wrapf(err, "cannot create directory '%s'", dir)
 	}
 	w, err := os.Create(fullpath)
-	return w, errors.WithStack(err)
+	return w, errors.Wrapf(err, "cannot create file '%s'", fullpath)
 }
 
 func (d *osFSRW) MkDir(path string) error {
