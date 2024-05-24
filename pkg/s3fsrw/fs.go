@@ -72,7 +72,7 @@ func (s3FS *s3FSRW) MkDir(path string) error {
 func (s3FS *s3FSRW) Open(path string) (fs.File, error) {
 	bucket, bucketPath := extractBucket(path)
 	if s3FS.logger != nil {
-		s3FS.logger.Debugf("%s - OpenSeeker(%s)", s3FS.String(), path)
+		s3FS.logger.Debugf("%s - Open(%s)", s3FS.String(), path)
 	}
 	ctx := context.Background()
 	object, err := s3FS.client.GetObject(ctx, bucket, bucketPath, minio.GetObjectOptions{})
