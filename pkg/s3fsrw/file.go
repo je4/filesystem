@@ -7,26 +7,26 @@ import (
 	"io/fs"
 )
 
-func NewFile(o *minio.Object, debugInfo string, logger zLogger.ZWrapper) *File {
-	return &File{
+func NewROFile(o *minio.Object, debugInfo string, logger zLogger.ZWrapper) *ROFile {
+	return &ROFile{
 		Object:    o,
 		logger:    logger,
 		debugInfo: debugInfo,
 	}
 }
 
-type File struct {
+type ROFile struct {
 	*minio.Object
 	logger    zLogger.ZWrapper
 	debugInfo string
 }
 
-func (s3f *File) Close() error {
-	s3f.logger.Debugf("closing s3 file: %s", s3f.debugInfo)
+func (s3f *ROFile) Close() error {
+	s3f.logger.Debugf("closing s3 read-only file: %s", s3f.debugInfo)
 	return errors.WithStack(s3f.Object.Close())
 }
 
-func (s3f *File) Stat() (fs.FileInfo, error) {
+func (s3f *ROFile) Stat() (fs.FileInfo, error) {
 	oInfo, err := s3f.Object.Stat()
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot stat '%v'", s3f.Object)
@@ -34,4 +34,4 @@ func (s3f *File) Stat() (fs.FileInfo, error) {
 	return NewFileInfo(&oInfo), nil
 }
 
-var _ fs.File = &File{}
+var _ fs.File = &ROFile{}

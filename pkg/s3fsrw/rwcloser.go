@@ -68,7 +68,7 @@ func (wc *rwCloser) Close() error {
 		}
 		wc.errs = append(wc.errs, wc.uploadInfo.err)
 	}
-	wc.logger.Debugf("close s3 pipe: %s", wc.debugInfo)
+	wc.logger.Debugf("close s3 write file: %s", wc.debugInfo)
 	return errors.Combine(wc.errs...)
 }
 

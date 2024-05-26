@@ -91,7 +91,7 @@ func (s3FS *s3FSRW) Open(path string) (fs.File, error) {
 		object.Close()
 		return nil, errors.Wrapf(objectInfo.Err, "error in objectInfo of '%s'", path)
 	}
-	return NewFile(object, path, s3FS.logger), nil
+	return NewROFile(object, path, s3FS.logger), nil
 }
 
 func (s3FS *s3FSRW) ReadFile(path string) ([]byte, error) {
