@@ -1,7 +1,7 @@
 package zipfs
 
 import (
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"io"
 	"io/fs"
 )

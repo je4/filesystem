@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/google/tink/go/core/registry"
 	"github.com/google/tink/go/keyset"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/checksum"
 	"github.com/je4/utils/v2/pkg/encrypt"
 	"io"

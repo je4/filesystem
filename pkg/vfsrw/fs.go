@@ -3,14 +3,14 @@ package vfsrw
 import (
 	"emperror.dev/errors"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"io"
 	"io/fs"
 	"strings"
 )
 
-func NewFS(config Config, logger zLogger.ZWrapper) (*vFSRW, error) {
+func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 	var toClose = []io.Closer{}
 	var closeAll = func() {
 		// iterate in reverse order
@@ -58,7 +58,7 @@ func NewFS(config Config, logger zLogger.ZWrapper) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no s3 section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newS3(cfg.S3, logger)
+			xFS, err := newS3(cfg.S3, zLogger.NewZWrapper(logger))
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create s3fsrw in '%s'", cfg.Name)

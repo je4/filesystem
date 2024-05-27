@@ -1,4 +1,4 @@
-module github.com/je4/filesystem/v2
+module github.com/je4/filesystem/v3
 
 go 1.22.0
 

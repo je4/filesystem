@@ -2,7 +2,7 @@ package zipfs
 
 import (
 	"emperror.dev/errors"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"io/fs"
 	"strings"
 )

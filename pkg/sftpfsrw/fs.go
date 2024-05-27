@@ -3,7 +3,7 @@ package sftpfsrw
 import (
 	"emperror.dev/errors"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/pkg/sftp"
 	"golang.org/x/crypto/ssh"
 	"io"

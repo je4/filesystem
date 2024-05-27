@@ -3,7 +3,7 @@ package s3fsrw
 import (
 	"crypto/tls"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"io/fs"
 	"regexp"

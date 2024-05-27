@@ -1,8 +1,8 @@
 package zipfsrw
 
 import (
-	"github.com/je4/filesystem/v2/pkg/osfsrw"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/osfsrw"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"os"
 	"path/filepath"
 	"testing"

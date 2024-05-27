@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"emperror.dev/errors"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/writefs"
-	"github.com/je4/filesystem/v2/pkg/zipfs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/zipfs"
 	"io"
 	"io/fs"
 )

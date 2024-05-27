@@ -3,7 +3,7 @@ package zipfsrw
 import (
 	"emperror.dev/errors"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/checksum"
 	"io"
 	"io/fs"

@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"emperror.dev/errors"
 	"fmt"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"

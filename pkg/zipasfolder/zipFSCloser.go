@@ -2,7 +2,7 @@ package zipasfolder
 
 import (
 	"emperror.dev/errors"
-	"github.com/je4/filesystem/v2/pkg/zipfs"
+	"github.com/je4/filesystem/v3/pkg/zipfs"
 	"io"
 	"io/fs"
 )

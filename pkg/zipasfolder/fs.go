@@ -3,7 +3,7 @@ package zipasfolder
 import (
 	"fmt"
 	"github.com/bluele/gcache"
-	"github.com/je4/filesystem/v2/pkg/writefs"
+	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/pkg/errors"
 	"io"
 	"io/fs"
