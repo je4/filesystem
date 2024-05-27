@@ -61,7 +61,7 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no s3 section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newS3(cfg.S3, zLogger.NewZWrapper(logger))
+			xFS, err := newS3(cfg.S3, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create s3fsrw in '%s'", cfg.Name)

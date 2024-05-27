@@ -87,7 +87,7 @@ func newSFTP(cfg *SFTP, logger zLogger.ZLogger) (fs.FS, error) {
 	return zFS, nil
 }
 
-func newS3(cfg *S3, logger zLogger.ZWrapper) (fs.FS, error) {
+func newS3(cfg *S3, logger zLogger.ZLogger) (fs.FS, error) {
 	var tlsConfig *tls.Config
 	switch cfg.CAPEM {
 	case "ignore":
