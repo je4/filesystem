@@ -40,6 +40,7 @@ func NewCreateFSFunc(access map[string]*S3Access, regexpString string, debug boo
 		}
 		subPath, _ := result["subpath"]
 
+		//		_logger := logger.With().Str("class", "s3FSRW").Logger()
 		s3fs, err := NewFS(
 			acc.URL,
 			acc.AccessKey,
