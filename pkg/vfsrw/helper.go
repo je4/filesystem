@@ -16,22 +16,22 @@ import (
 	"regexp"
 )
 
-func newOS(cfg *OS) (fs.FS, error) {
-	rFS, err := osfsrw.NewFS(cfg.BaseDir)
+func newOS(cfg *OS, logger zLogger.ZLogger) (fs.FS, error) {
+	rFS, err := osfsrw.NewFS(cfg.BaseDir, logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create new osfsrw")
 	}
 	if cfg.ZipAsFolderCache == 0 {
 		return rFS, nil
 	}
-	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache))
+	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache), logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zipasfolder over '%v'", zFS)
 	}
 	return zFS, nil
 }
 
-func newSFTP(cfg *SFTP) (fs.FS, error) {
+func newSFTP(cfg *SFTP, logger zLogger.ZLogger) (fs.FS, error) {
 	if cfg.Sessions <= cfg.ZipAsFolderCache {
 		return nil, errors.Errorf("sftp sessions (%v) must be larger than zipasfoldercache (%v)", cfg.Sessions, cfg.ZipAsFolderCache)
 	}
@@ -73,14 +73,14 @@ func newSFTP(cfg *SFTP) (fs.FS, error) {
 		}
 		sConfig.HostKeyCallback = hkCallback
 	}
-	rFS, err := sftpfsrw.NewFS(string(cfg.Address), sConfig, cfg.BaseDir, cfg.Sessions)
+	rFS, err := sftpfsrw.NewFS(string(cfg.Address), sConfig, cfg.BaseDir, cfg.Sessions, logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create sftpfsrw")
 	}
 	if cfg.ZipAsFolderCache == 0 {
 		return rFS, nil
 	}
-	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache))
+	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache), logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zipasfolder over '%v'", zFS)
 	}
@@ -108,7 +108,7 @@ func newS3(cfg *S3, logger zLogger.ZWrapper) (fs.FS, error) {
 	if cfg.ZipAsFolderCache == 0 {
 		return rFS, nil
 	}
-	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache))
+	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache), nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zipasfolder over '%v'", zFS)
 	}

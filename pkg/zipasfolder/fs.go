@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bluele/gcache"
 	"github.com/je4/filesystem/v3/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"github.com/pkg/errors"
 	"io"
 	"io/fs"
@@ -13,15 +14,18 @@ import (
 	"time"
 )
 
-// NewFS creates a new zipAsfolderFS which handles zipfiles like folders which are read-only
+// NewFS creates a new zipAsFolderFS which handles zipfiles like folders which are read-only
 // it implements readwritefs.ReadWriteFS, fs.ReadDirFS, fs.ReadFileFS, basefs.CloserFS
-func NewFS(baseFS fs.FS, cacheSize int) (*zipAsfolderFS, error) {
-	f := &zipAsfolderFS{
+func NewFS(baseFS fs.FS, cacheSize int, logger zLogger.ZLogger) (*zipAsFolderFS, error) {
+	_logger := logger.With().Str("class", "zipAsFolderFS").Logger()
+	logger = &_logger
+	f := &zipAsFolderFS{
 		baseFS: baseFS,
 		zipCache: gcache.New(cacheSize).
 			LRU().
 			LoaderFunc(func(key interface{}) (interface{}, error) {
 				zipFilename, ok := key.(string)
+				logger.Debug().Msgf("load zip file '%s'", zipFilename)
 				if !ok {
 					return nil, errors.Errorf("cannot cast key %v to string", key)
 				}
@@ -33,6 +37,7 @@ func NewFS(baseFS fs.FS, cacheSize int) (*zipAsfolderFS, error) {
 				return zipFS, nil
 			}).
 			EvictedFunc(func(key, value any) {
+				logger.Debug().Msgf("evict zip file '%s'", key)
 				zipFS, ok := value.(fs.FS)
 				if !ok {
 					return
@@ -40,6 +45,7 @@ func NewFS(baseFS fs.FS, cacheSize int) (*zipAsfolderFS, error) {
 				writefs.Close(zipFS)
 			}).
 			PurgeVisitorFunc(func(key, value any) {
+				logger.Debug().Msgf("purge zip file '%s'", key)
 				zipFS, ok := value.(fs.FS)
 				if !ok {
 					return
@@ -47,7 +53,8 @@ func NewFS(baseFS fs.FS, cacheSize int) (*zipAsfolderFS, error) {
 				writefs.Close(zipFS)
 			}).
 			Build(),
-		end: make(chan bool),
+		end:    make(chan bool),
+		logger: logger,
 	}
 	go func() {
 		for alive := true; alive; {
@@ -64,23 +71,24 @@ func NewFS(baseFS fs.FS, cacheSize int) (*zipAsfolderFS, error) {
 	return f, nil
 }
 
-type zipAsfolderFS struct {
+type zipAsFolderFS struct {
 	baseFS   fs.FS
 	zipCache gcache.Cache
 	lock     sync.RWMutex
 	end      chan bool
+	logger   zLogger.ZLogger
 }
 
-func (fsys *zipAsfolderFS) Fullpath(name string) (string, error) {
+func (fsys *zipAsFolderFS) Fullpath(name string) (string, error) {
 	return writefs.Fullpath(fsys.baseFS, name)
 }
 
-func (fsys *zipAsfolderFS) String() string {
+func (fsys *zipAsFolderFS) String() string {
 	return fmt.Sprintf("zipAsFolder:%v", fsys.baseFS)
 }
 
 // CReate creates a new file
-func (fsys *zipAsfolderFS) Create(path string) (writefs.FileWrite, error) {
+func (fsys *zipAsFolderFS) Create(path string) (writefs.FileWrite, error) {
 	path = clearPath(path)
 	zipFile, _, isZIP := expandZipFile(path)
 	if isZIP {
@@ -90,7 +98,7 @@ func (fsys *zipAsfolderFS) Create(path string) (writefs.FileWrite, error) {
 }
 
 // MkDir creates a new folder
-func (fsys *zipAsfolderFS) MkDir(path string) error {
+func (fsys *zipAsFolderFS) MkDir(path string) error {
 	path = clearPath(path)
 	zipFile, _, isZIP := expandZipFile(path)
 	if isZIP {
@@ -100,7 +108,7 @@ func (fsys *zipAsfolderFS) MkDir(path string) error {
 }
 
 // Stat returns the file info for a given path
-func (fsys *zipAsfolderFS) Stat(name string) (fs.FileInfo, error) {
+func (fsys *zipAsFolderFS) Stat(name string) (fs.FileInfo, error) {
 	name = strings.TrimPrefix(name, "./")
 	name = strings.Trim(name, "/")
 	zipFile, zipPath, isZIP := expandZipFile(name)
@@ -125,13 +133,13 @@ func (fsys *zipAsfolderFS) Stat(name string) (fs.FileInfo, error) {
 	return fs.Stat(zipFS, zipPath)
 }
 
-// Sub returns a new zipAsfolderFS which is a subfolder of the current zipAsfolderFS
-func (fsys *zipAsfolderFS) Sub(dir string) (writefs.ReadWriteFS, error) {
+// Sub returns a new zipAsFolderFS which is a subfolder of the current zipAsFolderFS
+func (fsys *zipAsFolderFS) Sub(dir string) (writefs.ReadWriteFS, error) {
 	return writefs.NewSubFS(fsys, dir), nil
 }
 
 // ReadFile reads a file from the filesystem
-func (fsys *zipAsfolderFS) ReadFile(name string) ([]byte, error) {
+func (fsys *zipAsFolderFS) ReadFile(name string) ([]byte, error) {
 	fp, err := fsys.Open(name)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open file '%s'", name)
@@ -141,7 +149,7 @@ func (fsys *zipAsfolderFS) ReadFile(name string) ([]byte, error) {
 }
 
 // ReadDir reads a directory from the filesystem
-func (fsys *zipAsfolderFS) ReadDir(name string) ([]fs.DirEntry, error) {
+func (fsys *zipAsFolderFS) ReadDir(name string) ([]fs.DirEntry, error) {
 	name = strings.TrimPrefix(name, "./")
 	name = strings.Trim(name, "/")
 	zipFile, zipPath, isZIP := expandZipFile(name)
@@ -182,7 +190,7 @@ func (fsys *zipAsfolderFS) ReadDir(name string) ([]fs.DirEntry, error) {
 }
 
 // Open opens a file from the filesystem
-func (fsys *zipAsfolderFS) Open(name string) (fs.File, error) {
+func (fsys *zipAsFolderFS) Open(name string) (fs.File, error) {
 	name = strings.TrimPrefix(name, "./")
 	name = strings.Trim(name, "/")
 	zipFile, zipPath, isZIP := expandZipFile(name)
@@ -212,7 +220,7 @@ func (fsys *zipAsfolderFS) Open(name string) (fs.File, error) {
 }
 
 // Close closes the filesystem and underlying fs if possible
-func (fsys *zipAsfolderFS) Close() error {
+func (fsys *zipAsFolderFS) Close() error {
 	fsys.lock.Lock()
 	defer fsys.lock.Unlock()
 	fsys.end <- true
@@ -224,7 +232,7 @@ func (fsys *zipAsfolderFS) Close() error {
 	return nil
 }
 
-func (fsys *zipAsfolderFS) ClearUnlocked() error {
+func (fsys *zipAsFolderFS) ClearUnlocked() error {
 	fsys.lock.Lock()
 	defer fsys.lock.Unlock()
 	fsMap := fsys.zipCache.GetALL(false)
@@ -258,11 +266,11 @@ func expandZipFile(name string) (zipFile string, zipPath string, isZip bool) {
 }
 
 var (
-	_ writefs.ReadWriteFS = (*zipAsfolderFS)(nil)
-	_ writefs.MkDirFS     = (*zipAsfolderFS)(nil)
-	_ writefs.CloseFS     = (*zipAsfolderFS)(nil)
-	_ writefs.FullpathFS  = (*zipAsfolderFS)(nil)
-	_ fs.ReadDirFS        = (*zipAsfolderFS)(nil)
-	_ fs.ReadFileFS       = (*zipAsfolderFS)(nil)
-	_ fmt.Stringer        = (*zipAsfolderFS)(nil)
+	_ writefs.ReadWriteFS = (*zipAsFolderFS)(nil)
+	_ writefs.MkDirFS     = (*zipAsFolderFS)(nil)
+	_ writefs.CloseFS     = (*zipAsFolderFS)(nil)
+	_ writefs.FullpathFS  = (*zipAsFolderFS)(nil)
+	_ fs.ReadDirFS        = (*zipAsFolderFS)(nil)
+	_ fs.ReadFileFS       = (*zipAsFolderFS)(nil)
+	_ fmt.Stringer        = (*zipAsFolderFS)(nil)
 )

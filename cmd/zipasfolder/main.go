@@ -29,11 +29,11 @@ func NewFSAbstractionZipAsFolder(name, basePath, fsBase string, cacheSize int) (
 		name:     name,
 		basePath: basePath,
 	}
-	osfs, err := osfsrw.NewFS(fsBase)
+	osfs, err := osfsrw.NewFS(fsBase, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create osfs")
 	}
-	fsa.FS, err = zipasfolder.NewFS(osfs, cacheSize)
+	fsa.FS, err = zipasfolder.NewFS(osfs, cacheSize, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zipasfolder")
 	}
@@ -100,8 +100,8 @@ func recurseDir(fsys fs.FS, name string) {
 func main0() {
 	flag.Parse()
 
-	dirFS, _ := osfsrw.NewFS(*basedir)
-	newFS, err := zipasfolder.NewFS(dirFS, 20)
+	dirFS, _ := osfsrw.NewFS(*basedir, nil)
+	newFS, err := zipasfolder.NewFS(dirFS, 20, nil)
 	if err != nil {
 		panic(err)
 	}

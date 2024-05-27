@@ -10,7 +10,7 @@ import (
 func NewCreateFSFunc() writefs.CreateFSFunc {
 	return func(f *writefs.Factory, baseFolder string) (fs.FS, error) {
 		folder := strings.TrimPrefix(baseFolder, "file://")
-		osFS, err := NewFS(folder)
+		osFS, err := NewFS(folder, nil)
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}

@@ -29,7 +29,7 @@ var zipFileName string // path of the zip file
 
 func TestMain(m *testing.M) {
 	var err error
-	baseFS, err = osfsrw.NewFS(os.TempDir())
+	baseFS, err = osfsrw.NewFS(os.TempDir(), nil)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

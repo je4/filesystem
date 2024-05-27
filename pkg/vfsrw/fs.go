@@ -23,6 +23,9 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 
 	vfs := &vFSRW{fss: map[string]fs.FS{}}
 
+	_logger := logger.With().Str("module", "vfsrw").Logger()
+	logger = &_logger
+
 	for _, cfg := range config {
 		switch strings.ToLower(cfg.Type) {
 		case "os":
@@ -30,7 +33,7 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no os section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newOS(cfg.OS)
+			xFS, err := newOS(cfg.OS, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create osfs in '%s'", cfg.Name)
@@ -44,7 +47,7 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no sftp section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newSFTP(cfg.SFTP)
+			xFS, err := newSFTP(cfg.SFTP, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create sftpfsrw in '%s'", cfg.Name)

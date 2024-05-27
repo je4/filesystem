@@ -3,13 +3,16 @@ package osfsrw
 import (
 	"emperror.dev/errors"
 	"github.com/je4/filesystem/v3/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
-func NewFS(dir string) (*osFSRW, error) {
+func NewFS(dir string, logger zLogger.ZLogger) (*osFSRW, error) {
+	_logger := logger.With().Str("class", "osFSRW").Logger()
+	logger = &_logger
 	var err error
 	if dir == "" || dir == "." {
 		dir, err = os.Getwd()
@@ -35,12 +38,14 @@ func NewFS(dir string) (*osFSRW, error) {
 	}
 
 	return &osFSRW{
-		dir: dir,
+		dir:    dir,
+		logger: logger,
 	}, nil
 }
 
 type osFSRW struct {
-	dir string
+	dir    string
+	logger zLogger.ZLogger
 }
 
 func (d *osFSRW) Fullpath(name string) (string, error) {
@@ -52,7 +57,7 @@ func (d *osFSRW) String() string {
 }
 
 func (d *osFSRW) Sub(dir string) (fs.FS, error) {
-	return NewFS(filepath.Join(d.dir, dir))
+	return NewFS(filepath.Join(d.dir, dir), nil)
 }
 
 func (d *osFSRW) Remove(path string) error {

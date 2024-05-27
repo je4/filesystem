@@ -16,14 +16,15 @@ import (
 	"net/http"
 )
 
-func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL, debug bool, tlsConfig *tls.Config, logger zLogger.ZWrapper) (*s3FSRW, error) {
+func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL, debug bool, tlsConfig *tls.Config, logger zLogger.ZLogger) (*s3FSRW, error) {
+	_logger := logger.With().Str("class", "s3FSRW").Logger()
 	var err error
 	fs := &s3FSRW{
 		client: nil,
 		//		bucket:   bucket,
 		region:   region,
 		endpoint: endpoint,
-		logger:   logger,
+		logger:   zLogger.NewZWrapper(&_logger),
 	}
 
 	var tr http.RoundTripper = &http.Transport{TLSClientConfig: tlsConfig}
@@ -32,7 +33,7 @@ func NewFS(endpoint, accessKeyID, secretAccessKey, region string, useSSL, debug 
 			&http.Transport{
 				TLSClientConfig: tlsConfig,
 			},
-			logger,
+			zLogger.NewZWrapper(&_logger),
 			JustURL,
 			URLTiming,
 			// CurlCommand,

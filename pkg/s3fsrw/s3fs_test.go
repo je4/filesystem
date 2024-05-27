@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
-	"github.com/minio/madmin-go/v2"
+	"github.com/minio/madmin-go/v3"
 	mclient "github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	minio "github.com/minio/minio/cmd"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"io/fs"
 	"net"
 	"os"
@@ -98,6 +99,9 @@ func TestMain(m *testing.M) {
 var testS3FSFactory *writefs.Factory
 
 func TestS3FS(t *testing.T) {
+	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+	logger := zerolog.New(output).With().Timestamp().Logger()
+
 	var err error
 	minioAccessKey := os.Getenv("MINIO_ACCESS_KEY")
 	minioSecretKey := os.Getenv("MINIO_SECRET_KEY")
@@ -121,7 +125,7 @@ func TestS3FS(t *testing.T) {
 			ARNRegexStr,
 			false,
 			nil,
-			nil,
+			&logger,
 		), ARNRegexStr, writefs.MediumFS)
 
 	s3fs, err := testS3FSFactory.Get("arn:local:s3:::")

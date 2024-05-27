@@ -4,7 +4,7 @@ import (
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
-	"github.com/pkg/sftp"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"golang.org/x/crypto/ssh"
 	"io"
 	"io/fs"
@@ -12,7 +12,9 @@ import (
 	"time"
 )
 
-func NewFS(addr string, config *ssh.ClientConfig, baseDir string, numSessions uint) (*sftpFSRW, error) {
+func NewFS(addr string, config *ssh.ClientConfig, baseDir string, numSessions uint, logger zLogger.ZLogger) (*sftpFSRW, error) {
+	_logger := logger.With().Str("class", "sftpFSRW").Logger()
+	logger = &_logger
 	client, err := ssh.Dial("tcp", addr, config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot connect to '%s'", addr)
@@ -25,64 +27,16 @@ func NewFS(addr string, config *ssh.ClientConfig, baseDir string, numSessions ui
 		sshClient:    client,
 		sftpSessions: map[uint]*sftpSession{},
 		freeSessions: make(chan uint, numSessions),
+		logger:       logger,
 	}
 
 	for i := uint(0); i < numSessions; i++ {
-		session, err := sftp.NewClient(client)
-		if err != nil {
-			return nil, errors.Wrap(err, "cannot create sftp client")
+		if err := NewSession(client, sftpFS, i, logger); err != nil {
+			return nil, errors.Wrapf(err, "cannot create sftp session %d", i)
 		}
-		sftpFS.sftpSessions[i] = &sftpSession{
-			Client: session,
-			id:     i,
-			sftpFS: sftpFS,
-		}
-		sftpFS.freeSessions <- i
 	}
 
 	return sftpFS, nil
-}
-
-type sftpSession struct {
-	*sftp.Client
-	id     uint
-	sftpFS *sftpFSRW
-}
-
-type sftpFile struct {
-	*sftp.File
-	sess *sftpSession
-}
-
-func (f *sftpFile) Close() error {
-	defer f.sess.sftpFS.closeSession(f.sess)
-	if err := f.File.Close(); err != nil {
-		return errors.Wrapf(err, "cannot close '%s'", f.Name())
-	}
-	return nil
-}
-
-func (sess *sftpSession) Open(fullpath string) (fs.File, error) {
-
-	fp, err := sess.Client.Open(fullpath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot open '%s'", fullpath)
-	}
-	return &sftpFile{
-		File: fp,
-		sess: sess,
-	}, nil
-}
-
-func (sess *sftpSession) Create(fullpath string) (writefs.FileWrite, error) {
-	fp, err := sess.Client.Create(fullpath)
-	if err != nil {
-		return nil, errors.Wrapf(err, "cannot open '%s'", fullpath)
-	}
-	return &sftpFile{
-		File: fp,
-		sess: sess,
-	}, nil
 }
 
 type sftpFSRW struct {
@@ -92,6 +46,7 @@ type sftpFSRW struct {
 	user         string
 	baseDir      string
 	freeSessions chan uint
+	logger       zLogger.ZLogger
 }
 
 func (sftpFS *sftpFSRW) Remove(path string) error {
