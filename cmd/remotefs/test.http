@@ -1,0 +1,19 @@
+POST https://localhost:8762/testcache/ub-media-testbucket-02/test/test/test.json?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2ZnMudGVzdGNhY2hlIiwiaWF0IjoxNTE2MjM5MDIyfQ.JktaPV82XwG7LlTEeTQt4WTg1Mvz8dSvPdgKZ3_-els
+Content-Type: application/json
+
+{
+  "id": 999,
+  "value": "content"
+}
+###
+
+GET https://localhost:8762/testcache/ub-media-testbucket-02/test/test/test.json?stat&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2ZnMudGVzdGNhY2hlIiwiaWF0IjoxNTE2MjM5MDIyfQ.JktaPV82XwG7LlTEeTQt4WTg1Mvz8dSvPdgKZ3_-els
+
+###
+
+GET https://localhost:8762/testcache/ub-media-testbucket-02/test/test?stat&token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2ZnMudGVzdGNhY2hlIiwiaWF0IjoxNTE2MjM5MDIyfQ.JktaPV82XwG7LlTEeTQt4WTg1Mvz8dSvPdgKZ3_-els
+
+###
+
+DELETE https://localhost:8762/testcache/ub-media-testbucket-02/test/test/test.json?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ2ZnMudGVzdGNhY2hlIiwiaWF0IjoxNTE2MjM5MDIyfQ.JktaPV82XwG7LlTEeTQt4WTg1Mvz8dSvPdgKZ3_-els
+

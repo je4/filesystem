@@ -1,6 +1,7 @@
 package vfsrw
 
 import "github.com/je4/utils/v2/pkg/config"
+import trustconfig "github.com/je4/trustutil/v2/pkg/config"
 
 type SFTP struct {
 	Address          config.EnvString
@@ -18,6 +19,12 @@ type OS struct {
 	ZipAsFolderCache uint
 }
 
+type Remote struct {
+	Address   string
+	VFS       string
+	ClientTLS *trustconfig.TLSConfig
+}
+
 type S3 struct {
 	AccessKeyID      config.EnvString
 	SecretAccessKey  config.EnvString
@@ -31,11 +38,12 @@ type S3 struct {
 }
 
 type VFS struct {
-	Name string `toml:"name"`
-	Type string `toml:"type"`
-	S3   *S3    `toml:"s3,omitempty"`
-	OS   *OS    `toml:"os,omitempty"`
-	SFTP *SFTP  `toml:"sftp,omitempty"`
+	Name   string  `toml:"name"`
+	Type   string  `toml:"type"`
+	S3     *S3     `toml:"s3,omitempty"`
+	OS     *OS     `toml:"os,omitempty"`
+	SFTP   *SFTP   `toml:"sftp,omitempty"`
+	Remote *Remote `toml:"remote,omitempty"`
 }
 
 type Config map[string]*VFS
