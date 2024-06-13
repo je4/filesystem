@@ -5,9 +5,11 @@ import (
 	"crypto/x509"
 	"emperror.dev/errors"
 	"github.com/je4/filesystem/v3/pkg/osfsrw"
+	"github.com/je4/filesystem/v3/pkg/remotefs"
 	"github.com/je4/filesystem/v3/pkg/s3fsrw"
 	"github.com/je4/filesystem/v3/pkg/sftpfsrw"
 	"github.com/je4/filesystem/v3/pkg/zipasfolder"
+	"github.com/je4/trustutil/v2/pkg/loader"
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
@@ -15,6 +17,20 @@ import (
 	"os"
 	"regexp"
 )
+
+func newRemote(conf *Remote, logger zLogger.ZLogger) (fs.FS, error) {
+	clientCert, clientLoader, err := loader.CreateClientLoader(conf.ClientTLS, logger)
+	if err != nil {
+		logger.Panic().Msgf("cannot create client loader: %v", err)
+	}
+	defer clientLoader.Close()
+
+	rFS, err := remotefs.NewFS(clientCert, conf.Address, "", conf.VFS, logger)
+	if err != nil {
+		return nil, errors.Wrapf(err, "cannot create new osfsrw")
+	}
+	return rFS, nil
+}
 
 func newOS(cfg *OS, logger zLogger.ZLogger) (fs.FS, error) {
 	rFS, err := osfsrw.NewFS(cfg.BaseDir, logger)

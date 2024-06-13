@@ -70,6 +70,20 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				toClose = append(toClose, closer)
 			}
 			vfs.fss[cfg.Name] = xFS
+		case "remote":
+			if cfg.Remote == nil {
+				closeAll()
+				return nil, errors.Errorf("no Remote section for filesystem '%s'", cfg.Name)
+			}
+			xFS, err := newS3(cfg.S3, logger)
+			if err != nil {
+				closeAll()
+				return nil, errors.Wrapf(err, "cannot create s3fsrw in '%s'", cfg.Name)
+			}
+			if closer, ok := xFS.(io.Closer); ok {
+				toClose = append(toClose, closer)
+			}
+			vfs.fss[cfg.Name] = xFS
 		}
 	}
 	return vfs, nil
@@ -235,4 +249,5 @@ var (
 	_ writefs.MkDirFS     = (*vFSRW)(nil)
 	_ writefs.RenameFS    = (*vFSRW)(nil)
 	_ writefs.RemoveFS    = (*vFSRW)(nil)
+	_ writefs.CreateFS    = (*vFSRW)(nil)
 )
