@@ -26,14 +26,16 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 	_logger := logger.With().Str("module", "vfsrw").Logger()
 	logger = &_logger
 
-	for _, cfg := range config {
+	for name, cfg := range config {
+		_logger = logger.With().Str("fs", name).Logger()
+		logger = &_logger
 		switch strings.ToLower(cfg.Type) {
 		case "os":
 			if cfg.OS == nil {
 				closeAll()
 				return nil, errors.Errorf("no os section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newOS(cfg.OS, logger)
+			xFS, err := newOS(name, cfg.OS, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create osfs in '%s'", cfg.Name)
@@ -47,7 +49,7 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no sftp section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newSFTP(cfg.SFTP, logger)
+			xFS, err := newSFTP(name, cfg.SFTP, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create sftpfsrw in '%s'", cfg.Name)
@@ -61,7 +63,7 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no s3 section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newS3(cfg.S3, logger)
+			xFS, err := newS3(name, cfg.S3, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create s3fsrw in '%s'", cfg.Name)
@@ -75,7 +77,7 @@ func NewFS(config Config, logger zLogger.ZLogger) (*vFSRW, error) {
 				closeAll()
 				return nil, errors.Errorf("no Remote section for filesystem '%s'", cfg.Name)
 			}
-			xFS, err := newS3(cfg.S3, logger)
+			xFS, err := newRemote(name, cfg.Remote, logger)
 			if err != nil {
 				closeAll()
 				return nil, errors.Wrapf(err, "cannot create s3fsrw in '%s'", cfg.Name)

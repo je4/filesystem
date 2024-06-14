@@ -10,6 +10,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/zLogger"
+	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
 	"net/http"
@@ -60,7 +61,7 @@ type mainController struct {
 }
 
 func (ctrl *mainController) Init(tlsConfig *tls.Config) error {
-	if len(ctrl.jwtAlgs) == 0 {
+	if len(ctrl.jwtKeys) == 0 {
 		ctrl.router.Use(ctrl.checkAccessMTLS)
 	} else {
 		ctrl.router.Use(ctrl.checkAccessJWT, cors.Default())
@@ -117,9 +118,10 @@ var pathRegexp = regexp.MustCompile(`"/?(.+?)/(.+?)/(.+)?(/(.+?))?$`)
 func (ctrl *mainController) checkAccessMTLS(c *gin.Context) {
 	vfs := c.Param("vfs")
 	vfsUrl := fmt.Sprintf("vfs://%s", vfs)
+	allowedURIs := []string{vfsUrl, "*"}
 	for _, cert := range c.Request.TLS.PeerCertificates {
 		for _, u := range cert.URIs {
-			if u.String() == vfsUrl {
+			if slices.Contains(allowedURIs, u.String()) {
 				return
 			}
 		}
