@@ -21,8 +21,8 @@ type OS struct {
 
 type Remote struct {
 	Address   string
-	VFS       string
 	ClientTLS *trustconfig.TLSConfig
+	BaseDir   string
 }
 
 type S3 struct {
