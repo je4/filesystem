@@ -13,26 +13,25 @@ import (
 	"github.com/je4/utils/v2/pkg/zLogger"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
+	"io"
 	"io/fs"
 	"os"
 	"regexp"
 )
 
-func newRemote(conf *Remote, logger zLogger.ZLogger) (fs.FS, error) {
+func newRemote(name string, conf *Remote, logger zLogger.ZLogger) (fs.FS, error) {
 	clientCert, clientLoader, err := loader.CreateClientLoader(conf.ClientTLS, logger)
 	if err != nil {
 		logger.Panic().Msgf("cannot create client loader: %v", err)
 	}
-	defer clientLoader.Close()
-
-	rFS, err := remotefs.NewFS(clientCert, conf.Address, "", conf.VFS, logger)
+	rFS, err := remotefs.NewFS(clientCert, conf.Address, conf.BaseDir, name, []io.Closer{clientLoader}, logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create new osfsrw")
 	}
 	return rFS, nil
 }
 
-func newOS(cfg *OS, logger zLogger.ZLogger) (fs.FS, error) {
+func newOS(name string, cfg *OS, logger zLogger.ZLogger) (fs.FS, error) {
 	rFS, err := osfsrw.NewFS(cfg.BaseDir, logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create new osfsrw")
@@ -47,7 +46,7 @@ func newOS(cfg *OS, logger zLogger.ZLogger) (fs.FS, error) {
 	return zFS, nil
 }
 
-func newSFTP(cfg *SFTP, logger zLogger.ZLogger) (fs.FS, error) {
+func newSFTP(name string, cfg *SFTP, logger zLogger.ZLogger) (fs.FS, error) {
 	if cfg.Sessions <= cfg.ZipAsFolderCache {
 		return nil, errors.Errorf("sftp sessions (%v) must be larger than zipasfoldercache (%v)", cfg.Sessions, cfg.ZipAsFolderCache)
 	}
@@ -103,7 +102,7 @@ func newSFTP(cfg *SFTP, logger zLogger.ZLogger) (fs.FS, error) {
 	return zFS, nil
 }
 
-func newS3(cfg *S3, logger zLogger.ZLogger) (fs.FS, error) {
+func newS3(name string, cfg *S3, logger zLogger.ZLogger) (fs.FS, error) {
 	var tlsConfig *tls.Config
 	switch cfg.CAPEM {
 	case "ignore":

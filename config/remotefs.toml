@@ -6,7 +6,7 @@ externaladdr = "https://localhost:8762"
 loglevel = "DEBUG"
 jwtalg = ["HS256","HS384","HS512"]
 
-[jwtkey]
+[_jwtkey]
 test = "geheimtest"
 tests3 = "geheimtests3"
 testcache = "geheimtestcache"

@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 )
 
-func NewFS(tlsConfig *tls.Config, addr string, dir, vfs string, logger zLogger.ZLogger) (*remoteFSRW, error) {
+func NewFS(tlsConfig *tls.Config, addr string, dir, vfs string, closer []io.Closer, logger zLogger.ZLogger) (*remoteFSRW, error) {
 	_logger := logger.With().Str("class", "remoteFSRW").Logger()
 	logger = &_logger
 
@@ -26,6 +26,7 @@ func NewFS(tlsConfig *tls.Config, addr string, dir, vfs string, logger zLogger.Z
 		addr:   addr,
 		dir:    dir,
 		vfs:    vfs,
+		close:  closer,
 		logger: logger,
 	}, nil
 }
@@ -36,10 +37,21 @@ type remoteFSRW struct {
 	addr   string
 	vfs    string
 	dir    string
+	close  []io.Closer
 }
 
 func (d *remoteFSRW) Fullpath(name string) (string, error) {
 	return fmt.Sprintf("vfs://%s/%s", d.vfs, filepath.ToSlash(filepath.Join(d.dir, name))), nil
+}
+
+func (d *remoteFSRW) Close() error {
+	var errs = []error{}
+	for _, c := range d.close {
+		if err := c.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Combine(errs...)
 }
 
 func (d *remoteFSRW) String() string {
@@ -76,7 +88,7 @@ func (d *remoteFSRW) Rename(oldPath, newPath string) error {
 }
 
 func (d *remoteFSRW) Open(name string) (fs.File, error) {
-	url := fmt.Sprintf("%s/%s/%s?stat", d.addr, d.vfs, name)
+	url := fmt.Sprintf("%s/%s/%s", d.addr, d.vfs, name)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create stat request for '%s'", url)
