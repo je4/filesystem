@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/checksum"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io"
 	"io/fs"
 	"strings"
@@ -14,7 +15,7 @@ import (
 // If the file does not exist, it will be created on the first write operation.
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
-func NewFSFileChecksums(baseFS fs.FS, path string, noCompression bool, algs []checksum.DigestAlgorithm, writers ...io.Writer) (*fsFileChecksums, error) {
+func NewFSFileChecksums(baseFS fs.FS, path string, noCompression bool, algs []checksum.DigestAlgorithm, logger zLogger.ZLogger, writers ...io.Writer) (*fsFileChecksums, error) {
 	newpath := path
 
 	csWriter, err := checksum.NewChecksumWriter(algs)
@@ -22,7 +23,7 @@ func NewFSFileChecksums(baseFS fs.FS, path string, noCompression bool, algs []ch
 		return nil, errors.Wrapf(err, "cannot create checksum writer for '%s'", newpath)
 	}
 
-	mainFS, err := NewFSFile(baseFS, newpath, noCompression, append(writers, csWriter)...)
+	mainFS, err := NewFSFile(baseFS, newpath, noCompression, logger, append(writers, csWriter)...)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zip file FS '%s'", newpath)
 	}

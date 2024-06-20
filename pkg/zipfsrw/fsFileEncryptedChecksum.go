@@ -11,6 +11,7 @@ import (
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/utils/v2/pkg/checksum"
 	"github.com/je4/utils/v2/pkg/encrypt"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io"
 	"io/fs"
 	"strings"
@@ -20,7 +21,7 @@ import (
 // If the file does not exist, it will be created on the first write operation.
 // If the file exists, it will be opened and read.
 // Changes will be written to an additional file and then renamed to the original file.
-func NewFSFileEncryptedChecksums(baseFS fs.FS, path string, noCompression bool, algs []checksum.DigestAlgorithm, keyUri string) (*fsFileEncryptedChecksums, error) {
+func NewFSFileEncryptedChecksums(baseFS fs.FS, path string, noCompression bool, algs []checksum.DigestAlgorithm, keyUri string, logger zLogger.ZLogger) (*fsFileEncryptedChecksums, error) {
 	// create encrypted file
 	encFP, err := writefs.Create(baseFS, path+".aes")
 	if err != nil {
@@ -42,7 +43,7 @@ func NewFSFileEncryptedChecksums(baseFS fs.FS, path string, noCompression bool, 
 
 	handle := encWriter.GetKeysetHandle()
 
-	zipFS, err := NewFSFileChecksums(baseFS, path, noCompression, algs, encWriter)
+	zipFS, err := NewFSFileChecksums(baseFS, path, noCompression, algs, logger, encWriter)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create zipFS")
 	}

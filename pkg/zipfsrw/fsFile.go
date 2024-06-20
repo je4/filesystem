@@ -3,7 +3,6 @@ package zipfsrw
 import (
 	"bufio"
 	"emperror.dev/errors"
-	"errors"
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/filesystem/v3/pkg/zipfs"
