@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/filesystem/v3/pkg/zipfs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
 )
 
-func NewFS(writer io.Writer, zipFS zipfs.OpenRawZipFS, noCompression bool, name string) (*zipFSRW, error) {
+func NewFS(writer io.Writer, zipFS zipfs.OpenRawZipFS, noCompression bool, name string, logger zLogger.ZLogger) (*zipFSRW, error) {
 	zipWriter := zip.NewWriter(writer)
 	return &zipFSRW{
 		zipReader:     zipFS,
@@ -20,6 +21,7 @@ func NewFS(writer io.Writer, zipFS zipfs.OpenRawZipFS, noCompression bool, name 
 		newFiles:      []string{},
 		noCompression: noCompression,
 		name:          name,
+		logger:        logger,
 	}, nil
 }
 
@@ -29,6 +31,7 @@ type zipFSRW struct {
 	newFiles      []string
 	noCompression bool
 	name          string
+	logger        zLogger.ZLogger
 }
 
 func (zfsrw *zipFSRW) Stat(name string) (fs.FileInfo, error) {

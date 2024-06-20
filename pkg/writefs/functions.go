@@ -2,7 +2,10 @@ package writefs
 
 import (
 	"emperror.dev/errors"
+	"io"
 	"io/fs"
+	"os"
+	"strings"
 )
 
 var ErrNotImplemented = errors.NewPlain("not implemented")
@@ -58,22 +61,23 @@ func Fullpath(fsys fs.FS, name string) (string, error) {
 	return "", errors.Wrap(ErrNotImplemented, "Fullpath")
 }
 
-func WriteFile(fsys fs.FS, name string, data []byte) error {
+func WriteFile(fsys fs.FS, name string, data []byte) (int, error) {
 	if _fsys, ok := fsys.(WriteFileFS); ok {
 		return _fsys.WriteFile(name, data)
 	}
 	fp, err := Create(fsys, name)
 	if err != nil {
-		return errors.Wrapf(err, "cannot create file '%s'", name)
+		return 0, errors.Wrapf(err, "cannot create file '%s'", name)
 	}
-	if _, err := fp.Write(data); err != nil {
+	count, err := fp.Write(data)
+	if err != nil {
 		fp.Close()
-		return errors.Wrapf(err, "cannot write file '%s'", name)
+		return 0, errors.Wrapf(err, "cannot write file '%s'", name)
 	}
 	if err := fp.Close(); err != nil {
-		return errors.Wrapf(err, "cannot close file '%s'", name)
+		return 0, errors.Wrapf(err, "cannot close file '%s'", name)
 	}
-	return nil
+	return count, nil
 }
 
 func HasContent(fsys fs.FS) bool {
@@ -87,4 +91,50 @@ func HasContent(fsys fs.FS) bool {
 		}
 	}
 	return false
+}
+
+func Copy(fs fs.FS, src, dst string) (int64, error) {
+	var srcFP io.ReadCloser
+	var err error
+	if strings.Contains(src, "://") {
+		srcFP, err = fs.Open(src)
+		if err != nil {
+			return 0, errors.Wrapf(err, "cannot open source '%s'", src)
+		}
+	} else {
+		srcFP, err = os.Open(src)
+		if err != nil {
+			return 0, errors.Wrapf(err, "cannot open source '%s'", src)
+		}
+	}
+	var dstFP io.WriteCloser
+	if strings.Contains(dst, "://") {
+		dstFP, err = Create(fs, dst)
+		if err != nil {
+			srcFP.Close()
+			return 0, errors.Wrapf(err, "cannot open destination '%s'", dst)
+		}
+	} else {
+		dstFP, err = os.Create(dst)
+		if err != nil {
+			srcFP.Close()
+			return 0, errors.Wrapf(err, "cannot open destination '%s'", dst)
+		}
+	}
+	var errs []error
+
+	num, err := io.Copy(dstFP, srcFP)
+	if err != nil {
+		errs = append(errs, errors.Wrap(err, "cannot copy data"))
+	}
+	if err := dstFP.Close(); err != nil {
+		errs = append(errs, errors.Wrap(err, "cannot close destination"))
+	}
+	if err := srcFP.Close(); err != nil {
+		errs = append(errs, errors.Wrap(err, "cannot close source"))
+	}
+	if len(errs) > 0 {
+		return 0, errors.Wrap(errors.Combine(errs...), "cannot copy files")
+	}
+	return num, nil
 }

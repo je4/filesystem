@@ -5,6 +5,7 @@ import (
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
@@ -19,7 +20,7 @@ type OpenRawZipFS interface {
 
 // NewFS creates a new fs.FS from a readerAt and size
 // it implements fs.FS, fs.ReadDirFS, fs.ReadFileFS, fs.StatFS, fs.SubFS, basefs.IsLockedFS
-func NewFS(r io.ReaderAt, size int64, name string) (fs *zipFS, err error) {
+func NewFS(r io.ReaderAt, size int64, name string, logger zLogger.ZLogger) (fs *zipFS, err error) {
 	zipReader, err := zip.NewReader(r, size)
 	if err != nil {
 		return nil, err
@@ -28,13 +29,15 @@ func NewFS(r io.ReaderAt, size int64, name string) (fs *zipFS, err error) {
 		Reader: zipReader,
 		mutex:  writefs.NewMutex(),
 		name:   name,
+		logger: logger,
 	}, nil
 }
 
 type zipFS struct {
 	*zip.Reader
-	mutex *writefs.Mutex
-	name  string
+	mutex  *writefs.Mutex
+	name   string
+	logger zLogger.ZLogger
 }
 
 func (zfs *zipFS) Sub(dir string) (fs.FS, error) {

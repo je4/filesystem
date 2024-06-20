@@ -7,10 +7,13 @@ import (
 	"github.com/je4/filesystem/v3/pkg/osfsrw"
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/filesystem/v3/pkg/zipasfolder"
+	"github.com/je4/utils/v2/pkg/zLogger"
+	"github.com/rs/zerolog"
 	"io"
 	"io/fs"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"time"
 )
@@ -24,16 +27,16 @@ type FSAbstraction interface {
 	OpenCreate(fsPath *url.URL) (io.WriteCloser, error)
 }
 
-func NewFSAbstractionZipAsFolder(name, basePath, fsBase string, cacheSize int) (FSAbstraction, error) {
+func NewFSAbstractionZipAsFolder(name, basePath, fsBase string, cacheSize int, logger zLogger.ZLogger) (FSAbstraction, error) {
 	fsa := &FSAbstractionZipAsFolder{
 		name:     name,
 		basePath: basePath,
 	}
-	osfs, err := osfsrw.NewFS(fsBase, nil)
+	osfs, err := osfsrw.NewFS(fsBase, logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create osfs")
 	}
-	fsa.FS, err = zipasfolder.NewFS(osfs, cacheSize, nil)
+	fsa.FS, err = zipasfolder.NewFS(osfs, cacheSize, logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zipasfolder")
 	}
@@ -100,8 +103,11 @@ func recurseDir(fsys fs.FS, name string) {
 func main0() {
 	flag.Parse()
 
-	dirFS, _ := osfsrw.NewFS(*basedir, nil)
-	newFS, err := zipasfolder.NewFS(dirFS, 20, nil)
+	_logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logger := &_logger
+
+	dirFS, _ := osfsrw.NewFS(*basedir, logger)
+	newFS, err := zipasfolder.NewFS(dirFS, 20, logger)
 	if err != nil {
 		panic(err)
 	}
@@ -140,7 +146,9 @@ func serveContent(w http.ResponseWriter, r *http.Request, name string, modTime t
 }
 
 func main() {
-	fszas, err := NewFSAbstractionZipAsFolder("test", "temp", "C:/", 20)
+	_logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	logger := &_logger
+	fszas, err := NewFSAbstractionZipAsFolder("test", "temp", "C:/", 20, logger)
 	if err != nil {
 		panic(err)
 	}

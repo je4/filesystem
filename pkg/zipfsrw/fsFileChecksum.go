@@ -67,7 +67,7 @@ func (zfsrw *fsFileChecksums) Close() error {
 		if len(errs) == 0 {
 			for alg, cs := range checksums {
 				sideCar := fmt.Sprintf("%s.%s", zfsrw.path, strings.ToLower(string(alg)))
-				if err := writefs.WriteFile(zfsrw.baseFS, sideCar, []byte(fmt.Sprintf("%s *%s", cs, zfsrw.path))); err != nil {
+				if _, err := writefs.WriteFile(zfsrw.baseFS, sideCar, []byte(fmt.Sprintf("%s *%s", cs, zfsrw.path))); err != nil {
 					errs = append(errs, errors.Wrapf(err, "cannot write sidecar file '%s'", sideCar))
 				}
 			}

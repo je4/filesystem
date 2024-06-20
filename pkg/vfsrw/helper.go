@@ -123,7 +123,7 @@ func newS3(name string, cfg *S3, logger zLogger.ZLogger) (fs.FS, error) {
 	if cfg.ZipAsFolderCache == 0 {
 		return rFS, nil
 	}
-	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache), nil)
+	zFS, err := zipasfolder.NewFS(rFS, int(cfg.ZipAsFolderCache), logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot create zipasfolder over '%v'", zFS)
 	}

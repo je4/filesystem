@@ -4,6 +4,7 @@ import (
 	"emperror.dev/errors"
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io"
 	"io/fs"
 )
@@ -13,7 +14,7 @@ type OpenRawZipCloserFS interface {
 	io.Closer
 }
 
-func NewFSFile(baseFS fs.FS, path string) (*fsFile, error) {
+func NewFSFile(baseFS fs.FS, path string, logger zLogger.ZLogger) (*fsFile, error) {
 	stat, err := fs.Stat(baseFS, path)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot stat file '%s'", path)
@@ -26,7 +27,7 @@ func NewFSFile(baseFS fs.FS, path string) (*fsFile, error) {
 	if !ok {
 		return nil, errors.Errorf("cannot cast reader of file '%s' to io.ReaderAt", path)
 	}
-	zfs, err := NewFS(fpAt, stat.Size(), fmt.Sprintf("fsFile(%v/%s)", baseFS, path))
+	zfs, err := NewFS(fpAt, stat.Size(), fmt.Sprintf("fsFile(%v/%s)", baseFS, path), logger)
 	if err != nil {
 		return nil, errors.Wrapf(err, "cannot open zipfs for file '%s'", path)
 	}

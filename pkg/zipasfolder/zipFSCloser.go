@@ -3,11 +3,12 @@ package zipasfolder
 import (
 	"emperror.dev/errors"
 	"github.com/je4/filesystem/v3/pkg/zipfs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io"
 	"io/fs"
 )
 
-func NewZipFSCloser(zipFile fs.File, filename string) (fs.FS, error) {
+func NewZipFSCloser(zipFile fs.File, filename string, logger zLogger.ZLogger) (fs.FS, error) {
 	readerAt, ok := zipFile.(io.ReaderAt)
 	if !ok {
 		return nil, errors.New("zipFile does not implement io.ReaderAt")
@@ -16,16 +17,18 @@ func NewZipFSCloser(zipFile fs.File, filename string) (fs.FS, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot stat zip file")
 	}
-	zfs, err := zipfs.NewFS(readerAt, zstat.Size(), filename)
+	zfs, err := zipfs.NewFS(readerAt, zstat.Size(), filename, logger)
 	return &zipFSCloser{
 		FS:      zfs,
 		zipFile: zipFile,
+		logger:  logger,
 	}, nil
 }
 
 type zipFSCloser struct {
 	fs.FS
 	zipFile fs.File
+	logger  zLogger.ZLogger
 }
 
 func (zipFS *zipFSCloser) Stat(name string) (fs.FileInfo, error) {

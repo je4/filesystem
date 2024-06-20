@@ -9,6 +9,7 @@ import (
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/filesystem/v3/pkg/zipfs"
 	"github.com/je4/utils/v2/pkg/checksum"
+	"github.com/rs/zerolog"
 	"io"
 	"io/fs"
 	"os"
@@ -29,7 +30,9 @@ var zipFileName string // path of the zip file
 
 func TestMain(m *testing.M) {
 	var err error
-	baseFS, err = osfsrw.NewFS(os.TempDir(), nil)
+	_logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	logger := &_logger
+	baseFS, err = osfsrw.NewFS(os.TempDir(), logger)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -118,7 +121,9 @@ func testZipFSRW_Create(t *testing.T) {
 
 func testZipFSRW_Read(t *testing.T) {
 	// open the zip file system again
-	zipFS, err := zipfs.NewFSFile(baseFS, zipFileName)
+	_logger := zerolog.New(os.Stderr).With().Timestamp().Logger()
+	logger := &_logger
+	zipFS, err := zipfs.NewFSFile(baseFS, zipFileName, logger)
 	if err != nil {
 		t.Fatal(err)
 	}

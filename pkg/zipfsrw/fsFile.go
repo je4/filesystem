@@ -3,9 +3,11 @@ package zipfsrw
 import (
 	"bufio"
 	"emperror.dev/errors"
+	"errors"
 	"fmt"
 	"github.com/je4/filesystem/v3/pkg/writefs"
 	"github.com/je4/filesystem/v3/pkg/zipfs"
+	"github.com/je4/utils/v2/pkg/zLogger"
 	"io"
 	"io/fs"
 )
@@ -16,13 +18,13 @@ import (
 // Changes will be written to an additional file and then renamed to the original file.
 // additional writers will added via io.MultiWriter
 // additional writers will not be closed
-func NewFSFile(baseFS fs.FS, path string, noCompression bool, writers ...io.Writer) (*fsFile, error) {
+func NewFSFile(baseFS fs.FS, path string, noCompression bool, logger zLogger.ZLogger, writers ...io.Writer) (*fsFile, error) {
 	writerPath := path
 
 	var zipFS zipfs.OpenRawZipFS
 
-	if xfs, err := zipfs.NewFSFile(baseFS, path); err != nil {
-		if errors.Cause(err) != fs.ErrNotExist {
+	if xfs, err := zipfs.NewFSFile(baseFS, path, logger); err != nil {
+		if !errors.Is(errors.Cause(err), fs.ErrNotExist) {
 			return nil, errors.Wrapf(err, "cannot open zip file '%s'", path)
 		}
 	} else {
@@ -45,7 +47,7 @@ func NewFSFile(baseFS fs.FS, path string, noCompression bool, writers ...io.Writ
 		mainWriter = zipFPBuffer
 	}
 
-	zipFSRWBase, err := NewFS(mainWriter, zipFS, noCompression, fmt.Sprintf("fsFile(%v/%s)", baseFS, path))
+	zipFSRWBase, err := NewFS(mainWriter, zipFS, noCompression, fmt.Sprintf("fsFile(%v/%s)", baseFS, path), logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create zipFSRW")
 	}

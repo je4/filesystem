@@ -57,7 +57,7 @@ func (d *osFSRW) String() string {
 }
 
 func (d *osFSRW) Sub(dir string) (fs.FS, error) {
-	return NewFS(filepath.Join(d.dir, dir), nil)
+	return NewFS(filepath.Join(d.dir, dir), d.logger)
 }
 
 func (d *osFSRW) Remove(path string) error {
