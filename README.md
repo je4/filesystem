@@ -1,5 +1,5 @@
 > \[!NOTE]
-> ****filesystem has been moved to [https://github.com/ocfl-archive/filesystems](https://github.com/ocfl-archive/filesystems).****
+> ****filesystem has been moved to [https://github.com/ocfl-archive/filesystem](https://github.com/ocfl-archive/filesystem).****
 
 # Filesystem Library
 
