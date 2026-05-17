@@ -1,3 +1,6 @@
+> \[!NOTE]
+> ****filesystem has been moved to [https://github.com/ocfl-archive/filesystems](https://github.com/ocfl-archive/filesystems).****
+
 # Filesystem Library
 
 This Go library provides advanced filesystem features not available in the standard library's `io/fs`. It introduces write support via `writefs` and a configurable virtual filesystem layer via `vfsrw`.
